@@ -5,6 +5,7 @@
     "main": "dist/plugin.js",
     "scripts": {
         "lint": "eslint --cache .",
+        "prepare": "tsc -p tsconfig.build.json --noCheck",
         "prepublishOnly": "tsc -p tsconfig.build.json",
         "print": "prettier --plugin=.",
         "test": "jest"
