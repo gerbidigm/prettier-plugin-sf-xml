@@ -3,7 +3,7 @@ const plugin = require("../dist/plugin.js");
 
 test("escapes double quotes in text without changing markup", async () => {
   const formatted = await prettier.format(
-    '<Root label="a &quot;b&quot;"><Body>Use "quoted" text &amp; &lt;</Body></Root>',
+    '<Root label="a &quot;b&quot;"><Body>Use "quoted" text &amp; &lt;</Body><Empty></Empty><AllInternalUsers>true</AllInternalUsers></Root>',
     { parser: "sf-xml-parse", plugins: [plugin] },
   );
 
@@ -11,4 +11,6 @@ test("escapes double quotes in text without changing markup", async () => {
   expect(formatted).toContain(
     "<Body>Use &quot;quoted&quot; text &amp; &lt;</Body>",
   );
+  expect(formatted).toContain("<Empty></Empty>");
+  expect(formatted).toContain("<AllInternalUsers>true</AllInternalUsers>");
 });

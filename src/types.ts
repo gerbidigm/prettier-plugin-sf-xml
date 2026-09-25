@@ -133,6 +133,7 @@ export type XMLBuilderOptions = {
     xmldec: { version: string, encoding: string, standalone: boolean | null };
     renderOpts: {
         pretty?: boolean;
+        allowEmpty?: boolean;
         indent?: string;
         newline?: string;
         allowEmpty?: boolean;
