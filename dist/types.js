@@ -7,5 +7,5 @@ var XMLValueType;
     XMLValueType["PRIMITIVE"] = "primitive";
     XMLValueType["OBJECT"] = "object";
     XMLValueType["ARRAY"] = "array";
-})(XMLValueType || (exports.XMLValueType = XMLValueType = {}));
+})(XMLValueType = exports.XMLValueType || (exports.XMLValueType = {}));
 ;

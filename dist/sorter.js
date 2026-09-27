@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sort = sort;
+exports.sort = void 0;
 var Type;
 (function (Type) {
     Type["BASIC"] = "basic";
@@ -55,7 +55,7 @@ function sort(object, sorterOptions, key) {
     var _a, _b, _c;
     const relevantKeys = (_a = sorterOptions.relevantKeys) !== null && _a !== void 0 ? _a : [];
     const nonSortKeys = (_b = sorterOptions.nonSortKeys) !== null && _b !== void 0 ? _b : [];
-    const customSortKeys = (_c = sorterOptions.nonSortKeys) !== null && _c !== void 0 ? _c : [];
+    const customSortKeys = (_c = sorterOptions.customSortElements) !== null && _c !== void 0 ? _c : {};
     if (nonSortKeys.includes(key)) {
         return object;
     }
@@ -67,10 +67,20 @@ function sort(object, sorterOptions, key) {
         case Type.OBJECT:
             const newObject = {};
             const sortedKeys = Reflect.ownKeys(object).sort((a, b) => {
-                var _a, _b;
-                let aKey = a.toString();
-                let bKey = b.toString();
-                return (_b = (_a = customSortKeys[aKey]) !== null && _a !== void 0 ? _a : aKey < customSortKeys[bKey]) !== null && _b !== void 0 ? _b : bKey;
+                const aKey = a.toString();
+                const bKey = b.toString();
+                const aPriority = customSortKeys[aKey];
+                const bPriority = customSortKeys[bKey];
+                if (aPriority !== undefined && bPriority !== undefined) {
+                    return aPriority - bPriority;
+                }
+                if (aPriority !== undefined) {
+                    return -1;
+                }
+                if (bPriority !== undefined) {
+                    return 1;
+                }
+                return aKey.localeCompare(bKey);
             });
             sortedKeys.forEach((innerKey) => {
                 newObject[innerKey.toString()] = sort(object[innerKey.toString()], sorterOptions, innerKey.toString());
@@ -80,3 +90,4 @@ function sort(object, sorterOptions, key) {
             throw new Error(`Unsupported type: ${typeof object}`);
     }
 }
+exports.sort = sort;
