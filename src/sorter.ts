@@ -62,7 +62,7 @@ const mySortFunction = (a: any, b: any, key: string, relevantKeys: SorterRelevan
 function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
     const relevantKeys: SorterRelevantKeys = sorterOptions.relevantKeys ?? [];
     const nonSortKeys: string[] = sorterOptions.nonSortKeys ?? [];
-    const customSortKeys: SorterCustomKeys = sorterOptions.nonSortKeys ?? [];
+    const customSortKeys: SorterCustomKeys = sorterOptions.customSortElements ?? {};
 
     if (nonSortKeys.includes(key)) {
         return object;
@@ -77,11 +77,22 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
 
         case Type.OBJECT:
             const newObject: Record<string, any> = {};
-            const sortedKeys = Reflect.ownKeys(object).sort((a, b) =>{
-                let aKey = a.toString();
-                let bKey = b.toString();
+            const sortedKeys = Reflect.ownKeys(object).sort((a, b) => {
+                const aKey = a.toString();
+                const bKey = b.toString();
+                const aPriority = customSortKeys[aKey];
+                const bPriority = customSortKeys[bKey];
 
-                return customSortKeys[aKey] ?? aKey < customSortKeys[bKey] ?? bKey;
+                if (aPriority !== undefined && bPriority !== undefined) {
+                    return aPriority - bPriority;
+                }
+                if (aPriority !== undefined) {
+                    return -1;
+                }
+                if (bPriority !== undefined) {
+                    return 1;
+                }
+                return aKey.localeCompare(bKey);
             });
             sortedKeys.forEach((innerKey) => {
             newObject[innerKey.toString()] = sort(object[innerKey.toString()], sorterOptions, innerKey.toString());

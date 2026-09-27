@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <type>Picklist</type>
+    <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+    <formula>IF(Amount__c &gt; 100, &quot;High&quot;, &quot;Low&quot;) &amp; &quot; Value&quot;</formula>
+    <description>Sample field used to verify sorting and formula preservation</description>
+    <caseSensitive>false</caseSensitive>
+    <label>Test Field</label>
+    <fullName>Test__c</fullName>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Zulu</fullName>
+                <default>false</default>
+                <label>Zulu</label>
+            </value>
+            <value>
+                <fullName>Alpha</fullName>
+                <default>true</default>
+                <label>Alpha</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
