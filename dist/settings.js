@@ -1,6 +1,7 @@
-import type { SorterOptions, XMLParseOptions, XMLBuilderOptions } from "./types";
-
-export const sorterOptions: SorterOptions = {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.xmlBuilderOptions = exports.xmlParseOptions = exports.sorterOptions = void 0;
+exports.sorterOptions = {
     relevantKeys: {
         action: ["name"],
         actionOverrides: ["actionName"],
@@ -58,13 +59,11 @@ export const sorterOptions: SorterOptions = {
         locationX: 4,
         locationY: 5
     }
-}
-
-export const xmlParseOptions: XMLParseOptions = {
+};
+exports.xmlParseOptions = {
     trim: true
 };
-
-export const xmlBuilderOptions: XMLBuilderOptions = {
+exports.xmlBuilderOptions = {
     xmldec: { version: "1.0", encoding: "UTF-8", standalone: null },
     renderOpts: {
         pretty: true,
