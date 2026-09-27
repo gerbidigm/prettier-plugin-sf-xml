@@ -136,7 +136,6 @@ export type XMLBuilderOptions = {
         allowEmpty?: boolean;
         indent?: string;
         newline?: string;
-        allowEmpty?: boolean;
     };
 };
 
