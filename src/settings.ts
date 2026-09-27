@@ -62,7 +62,6 @@ export const sorterOptions: SorterOptions = {
 export const defaultCustomSortElements: string[] = [
     "name",
     "fullName",
-    "label",
     "locationX",
     "locationY"
 ];

@@ -62,7 +62,6 @@ exports.sorterOptions = {
 exports.defaultCustomSortElements = [
     "name",
     "fullName",
-    "label",
     "locationX",
     "locationY"
 ];

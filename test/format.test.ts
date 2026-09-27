@@ -51,11 +51,11 @@ describe("CustomField with formula and picklist values", () => {
 
         expect(orderedTags).toEqual([
             "fullName",
-            "label",
             "caseSensitive",
             "description",
             "formula",
             "formulaTreatBlanksAs",
+            "label",
             "type",
             "valueSet"
         ]);
@@ -88,12 +88,25 @@ describe("CustomField with formula and picklist values", () => {
 });
 
 describe("xmlCustomSortElements option", () => {
-    test("defaults to pinning label right after fullName", async () => {
+    test("defaults to pinning only fullName, letting label sort alphabetically", async () => {
         const formatted = await format(canonicalCustomField);
 
         const orderedTags = [...formatted.matchAll(/^ {2}<(\w+)>/gm)].map((match) => match[1]);
 
-        expect(orderedTags.slice(0, 2)).toEqual(["fullName", "label"]);
+        expect(orderedTags).toEqual([
+            "fullName",
+            "caseSensitive",
+            "description",
+            "externalId",
+            "inlineHelpText",
+            "label",
+            "length",
+            "required",
+            "trackHistory",
+            "trackTrending",
+            "type",
+            "unique"
+        ]);
     });
 
     test("can be narrowed to only pin fullName, matching Salesforce's canonical retrieve order", async () => {
