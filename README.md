@@ -25,3 +25,17 @@ The `prettier` executable is now installed and ready for use:
 ```bash
 ./node_modules/.bin/prettier --write '**/*.xml'
 ```
+
+## Options
+
+### `xmlCustomSortElements`
+
+Element names that are pinned ahead of their alphabetically-sorted siblings, in priority order. Defaults to `["name", "fullName", "label", "locationX", "locationY"]`.
+
+Salesforce's own canonical (retrieved) metadata XML only ever pins the identifier element (`fullName`/`name`) first — everything else sorts alphabetically. If you round-trip files through an org and want your local formatting to match that exactly, narrow this option in your prettier config:
+
+```json
+{
+  "xmlCustomSortElements": ["fullName"]
+}
+```

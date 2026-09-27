@@ -50,15 +50,22 @@ export const sorterOptions: SorterOptions = {
         "sections",
         "StandardValueSet",
         "valueSetDefinition"
-    ],
-    customSortElements: {
-        name: 1,
-        fullName: 2,
-        label: 3,
-        locationX: 4,
-        locationY: 5
-    }
+    ]
 }
+
+// The default priority order for elements that should be pinned ahead of
+// their alphabetically-sorted siblings, used when the consumer doesn't
+// override `xmlCustomSortElements`. Salesforce's own canonical (retrieved)
+// XML only ever pins the identifier element first, so anything past
+// `fullName`/`name` here is a readability preference, not a canonicalization
+// requirement, and can be overridden per-project.
+export const defaultCustomSortElements: string[] = [
+    "name",
+    "fullName",
+    "label",
+    "locationX",
+    "locationY"
+];
 
 export const xmlParseOptions: XMLParseOptions = {
     trim: true

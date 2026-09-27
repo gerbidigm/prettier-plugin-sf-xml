@@ -11,10 +11,13 @@ const exampleProfile = fs.readFileSync(path.join(__dirname, "./example.profile-m
 
 const customFieldWithFormula = fs.readFileSync(path.join(__dirname, "./customfield-formula.field-meta.xml"), "utf-8");
 
-function format(content: string) {
+const canonicalCustomField = fs.readFileSync(path.join(__dirname, "./canonical-customfield.field-meta.xml"), "utf-8");
+
+function format(content: string, options: Record<string, unknown> = {}) {
     return prettier.format(content, {
       parser: "sf-xml-parse",
-      plugins: [plugin as any as string] // hacky but it works
+      plugins: [plugin as any as string], // hacky but it works
+      ...options
     });
   }
 
@@ -81,5 +84,36 @@ describe("CustomField with formula and picklist values", () => {
 
         expect(formattedParsed.CustomField.formula[0]).toBe(originalParsed.CustomField.formula[0]);
         expect(formattedParsed.CustomField.description[0]).toBe(originalParsed.CustomField.description[0]);
+    });
+});
+
+describe("xmlCustomSortElements option", () => {
+    test("defaults to pinning label right after fullName", async () => {
+        const formatted = await format(canonicalCustomField);
+
+        const orderedTags = [...formatted.matchAll(/^ {2}<(\w+)>/gm)].map((match) => match[1]);
+
+        expect(orderedTags.slice(0, 2)).toEqual(["fullName", "label"]);
+    });
+
+    test("can be narrowed to only pin fullName, matching Salesforce's canonical retrieve order", async () => {
+        const formatted = await format(canonicalCustomField, { xmlCustomSortElements: ["fullName"] });
+
+        const orderedTags = [...formatted.matchAll(/^ {2}<(\w+)>/gm)].map((match) => match[1]);
+
+        expect(orderedTags).toEqual([
+            "fullName",
+            "caseSensitive",
+            "description",
+            "externalId",
+            "inlineHelpText",
+            "label",
+            "length",
+            "required",
+            "trackHistory",
+            "trackTrending",
+            "type",
+            "unique"
+        ]);
     });
 });

@@ -26,6 +26,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const xml2js = __importStar(require("xml2js"));
 const settings_js_1 = require("./settings.js");
 const sorter_js_1 = require("./sorter.js");
+const buildCustomSortElements = (elements) => {
+    const customSortElements = {};
+    elements.forEach((key, index) => {
+        customSortElements[key] = index + 1;
+    });
+    return customSortElements;
+};
 const getTab = function (tabWidth, useTabs) {
     let tab = "";
     for (let i = 0; i < tabWidth; i++) {
@@ -96,9 +103,14 @@ const escapeTextQuotes = (xml) => {
 };
 const printer = {
     print(path, opts, print) {
+        var _a;
         settings_js_1.xmlBuilderOptions.renderOpts.indent = getTab(opts.tabWidth, opts.useTabs);
         let builder = new xml2js.Builder(settings_js_1.xmlBuilderOptions);
-        let sortedJsonObj = (0, sorter_js_1.sort)(path.getValue().parsedXML, settings_js_1.sorterOptions, null);
+        const runtimeSorterOptions = {
+            ...settings_js_1.sorterOptions,
+            customSortElements: buildCustomSortElements((_a = opts.xmlCustomSortElements) !== null && _a !== void 0 ? _a : settings_js_1.defaultCustomSortElements)
+        };
+        let sortedJsonObj = (0, sorter_js_1.sort)(path.getValue().parsedXML, runtimeSorterOptions, null);
         let sortedXML = builder.buildObject(sortedJsonObj);
         // add new line at the end of the file if not exist
         if (!sortedXML.endsWith("\n")) {

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>External_Key__c</fullName>
+    <label>External Key</label>
+    <caseSensitive>false</caseSensitive>
+    <description>Stable key used by demo and flat-file data loads to upsert this request contact role.</description>
+    <externalId>true</externalId>
+    <inlineHelpText>Stable key for flat-file imports; do not change after a record is loaded.</inlineHelpText>
+    <length>80</length>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>true</unique>
+</CustomField>

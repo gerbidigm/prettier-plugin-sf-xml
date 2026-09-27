@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.xmlBuilderOptions = exports.xmlParseOptions = exports.sorterOptions = void 0;
+exports.xmlBuilderOptions = exports.xmlParseOptions = exports.defaultCustomSortElements = exports.sorterOptions = void 0;
 exports.sorterOptions = {
     relevantKeys: {
         action: ["name"],
@@ -51,15 +51,21 @@ exports.sorterOptions = {
         "sections",
         "StandardValueSet",
         "valueSetDefinition"
-    ],
-    customSortElements: {
-        name: 1,
-        fullName: 2,
-        label: 3,
-        locationX: 4,
-        locationY: 5
-    }
+    ]
 };
+// The default priority order for elements that should be pinned ahead of
+// their alphabetically-sorted siblings, used when the consumer doesn't
+// override `xmlCustomSortElements`. Salesforce's own canonical (retrieved)
+// XML only ever pins the identifier element first, so anything past
+// `fullName`/`name` here is a readability preference, not a canonicalization
+// requirement, and can be overridden per-project.
+exports.defaultCustomSortElements = [
+    "name",
+    "fullName",
+    "label",
+    "locationX",
+    "locationY"
+];
 exports.xmlParseOptions = {
     trim: true
 };

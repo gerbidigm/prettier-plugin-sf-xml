@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 const parser_js_1 = __importDefault(require("./parser.js"));
 const printer_js_1 = __importDefault(require("./printer.js"));
+const settings_js_1 = require("./settings.js");
 const plugin = {
     languages: [
         {
@@ -17,6 +18,16 @@ const plugin = {
     },
     printers: {
         'sf-xml-print': printer_js_1.default
+    },
+    options: {
+        xmlCustomSortElements: {
+            since: '0.4.0',
+            category: 'Format',
+            type: 'string',
+            array: true,
+            default: [{ value: settings_js_1.defaultCustomSortElements }],
+            description: 'Element names that are pinned ahead of their alphabetically-sorted siblings, in priority order. Set to just the identifier element (e.g. ["fullName"]) to match Salesforce\'s own canonical retrieve ordering exactly.'
+        }
     }
 };
 module.exports = plugin;
