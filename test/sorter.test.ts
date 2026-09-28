@@ -1,4 +1,5 @@
 import { sort } from "../src/sorter";
+import { sorterOptions } from "../src/settings";
 import type { SorterOptions } from "../src/types";
 
 const baseOptions: SorterOptions = {
@@ -65,6 +66,19 @@ test("repeated child arrays still sort by their relevant key", () => {
     const result = sort(input, options, "Parent");
 
     expect(result.fieldPermissions.map((item: any) => item.field[0])).toEqual(["Case.Alpha", "Case.Zeta"]);
+});
+
+test("CustomObjectTranslation quickActions sort by name, not by label text", () => {
+    const input = {
+        quickActions: [
+            { label: ["Zulu Label"], name: ["Apple_Action"] },
+            { label: ["Alpha Label"], name: ["Zebra_Action"] }
+        ]
+    };
+
+    const result = sort(input, sorterOptions, "CustomObjectTranslation");
+
+    expect(result.quickActions.map((item: any) => item.name[0])).toEqual(["Apple_Action", "Zebra_Action"]);
 });
 
 test("keyOrderOverrides forces targets before targetConfigs despite alphabetical order", () => {

@@ -45,6 +45,7 @@ export const sorterOptions: SorterOptions = {
         objectMapping: ["outputObject"],
         objectPermissions: ["object"],
         pageAccesses: ["apexPage"],
+        quickActions: ["name"],
         recipients: ["recipient"],
         recordTypeVisibilities: ["tab"],
         tabVisibilities: ["name"],
