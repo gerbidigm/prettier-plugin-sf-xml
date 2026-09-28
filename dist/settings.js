@@ -78,7 +78,7 @@ exports.xmlBuilderOptions = {
     xmldec: { version: "1.0", encoding: "UTF-8", standalone: null },
     renderOpts: {
         pretty: true,
-        allowEmpty: true,
+        allowEmpty: false,
         indent: '    ',
         newline: '\n'
     }
