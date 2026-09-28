@@ -96,6 +96,45 @@ test("keyOrderOverrides forces targets before targetConfigs despite alphabetical
     expect(Object.keys(result)).toEqual(["apiVersion", "targets", "targetConfigs"]);
 });
 
+test("CustomApplication formFactors sort Small before Large, not alphabetically", () => {
+    const input = {
+        formFactors: ["Large", "Small"]
+    };
+
+    const result = sort(input, sorterOptions, "CustomApplication");
+
+    expect(result.formFactors).toEqual(["Small", "Large"]);
+});
+
+test("valuePriority leaves unlisted values sorting alphabetically after listed ones", () => {
+    const options: SorterOptions = {
+        valuePriority: {
+            formFactors: ["Small", "Medium", "Large"]
+        }
+    };
+    const input = {
+        formFactors: ["Zulu", "Large", "Alpha", "Small"]
+    };
+
+    const result = sort(input, options, "CustomApplication");
+
+    expect(result.formFactors).toEqual(["Small", "Large", "Alpha", "Zulu"]);
+});
+
+test("CustomApplication actionOverrides.pageOrSobjectType sorts after every other sibling", () => {
+    const input = {
+        actionOverrides: [{
+            type: ["Default"],
+            actionName: ["View"],
+            pageOrSobjectType: ["Account"]
+        }]
+    };
+
+    const result = sort(input, sorterOptions, "CustomApplication");
+
+    expect(Object.keys(result.actionOverrides[0])).toEqual(["actionName", "type", "pageOrSobjectType"]);
+});
+
 test("underscore-containing names sort by plain codepoint order, not locale collation", () => {
     const options: SorterOptions = {
         relevantKeys: {

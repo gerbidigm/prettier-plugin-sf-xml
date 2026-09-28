@@ -85,7 +85,18 @@ exports.sorterOptions = {
     // pair and doesn't pin either key ahead of unrelated siblings.
     keyOrderOverrides: [
         ["targets", "targetConfigs"]
-    ]
+    ],
+    // Keys that always sort after every other sibling in their container,
+    // pinned or not — the opposite end from customSortElements.
+    sortLastKeys: [
+        "actionOverrides.pageOrSobjectType"
+    ],
+    // Basic-value arrays where Salesforce expects a specific order instead
+    // of alphabetical (e.g. CustomApplication's formFactors: alphabetical
+    // would put "Large" before "Small").
+    valuePriority: {
+        formFactors: ["Small", "Medium", "Large"]
+    }
 };
 // The default priority order for elements that should be pinned ahead of
 // their alphabetically-sorted siblings, used when the consumer doesn't
@@ -114,7 +125,7 @@ exports.defaultCustomSortElements = [
 // self-close every empty element under that root type — Flow metadata is
 // expected to self-close uniformly, unlike other schemas where only specific
 // elements are known to prefer it.
-exports.defaultSelfClosingElements = ["Flow.*"];
+exports.defaultSelfClosingElements = ["Flow.*", "CustomMetadata.*", "Dashboard.*"];
 exports.xmlParseOptions = {
     trim: true
 };

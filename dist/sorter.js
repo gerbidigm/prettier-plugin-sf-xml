@@ -49,6 +49,31 @@ const getIdentifierFromObject = (key, value, relevantKeys) => {
 function compareStrings(a, b) {
     return a < b ? -1 : a > b ? 1 : 0;
 }
+// Looks up a value's priority in a container-scoped ordered list (e.g.
+// formFactors: ["Small", "Medium", "Large"]), for basic-type array items that
+// need a specific order Salesforce expects instead of alphabetical (Small
+// would otherwise sort after Large).
+function getValuePriority(valuePriority, containerKey, value) {
+    if (containerKey === undefined) {
+        return undefined;
+    }
+    const priorityList = valuePriority[containerKey];
+    if (priorityList === undefined) {
+        return undefined;
+    }
+    const index = priorityList.indexOf(String(value));
+    return index === -1 ? undefined : index;
+}
+// Looks up whether a child key should sort after every other sibling key,
+// pinned or not (e.g. actionOverrides.pageOrSobjectType), preferring a
+// container-scoped entry over a bare, unscoped one — mirrors
+// getCustomSortPriority's scoping but for the opposite end of the order.
+function isSortLast(sortLastKeys, containerKey, childKey) {
+    if (containerKey !== undefined && sortLastKeys.includes(`${containerKey}.${childKey}`)) {
+        return true;
+    }
+    return sortLastKeys.includes(childKey);
+}
 // Looks up a child key's pin priority, preferring an entry scoped to the
 // immediate container key (e.g. "actionCalls.description") over a bare,
 // unscoped entry (e.g. "fullName"). Container-scoped entries let the same
@@ -65,17 +90,32 @@ function getCustomSortPriority(customSortKeys, containerKey, childKey) {
     }
     return customSortKeys[childKey];
 }
-const mySortFunction = (a, b, key, relevantKeys) => {
+const mySortFunction = (a, b, key, relevantKeys, valuePriority) => {
+    if (getType(a) === Type.BASIC && getType(b) === Type.BASIC) {
+        const aPriority = getValuePriority(valuePriority, key, a);
+        const bPriority = getValuePriority(valuePriority, key, b);
+        if (aPriority !== undefined && bPriority !== undefined) {
+            return aPriority - bPriority;
+        }
+        if (aPriority !== undefined) {
+            return -1;
+        }
+        if (bPriority !== undefined) {
+            return 1;
+        }
+    }
     const aIdentifier = getIdentifier(key, a, relevantKeys);
     const bIdentifier = getIdentifier(key, b, relevantKeys);
     return compareStrings(aIdentifier, bIdentifier);
 };
 function sort(object, sorterOptions, key) {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e, _f;
     const relevantKeys = (_a = sorterOptions.relevantKeys) !== null && _a !== void 0 ? _a : [];
     const nonSortKeys = (_b = sorterOptions.nonSortKeys) !== null && _b !== void 0 ? _b : [];
     const customSortKeys = (_c = sorterOptions.customSortElements) !== null && _c !== void 0 ? _c : {};
     const keyOrderOverrides = (_d = sorterOptions.keyOrderOverrides) !== null && _d !== void 0 ? _d : [];
+    const sortLastKeys = (_e = sorterOptions.sortLastKeys) !== null && _e !== void 0 ? _e : [];
+    const valuePriority = (_f = sorterOptions.valuePriority) !== null && _f !== void 0 ? _f : {};
     if (nonSortKeys.includes(key)) {
         return object;
     }
@@ -83,7 +123,7 @@ function sort(object, sorterOptions, key) {
         case Type.BASIC:
             return object;
         case Type.ARRAY:
-            return object.map((item) => sort(item, sorterOptions, key)).sort((a, b) => mySortFunction(a, b, key, relevantKeys));
+            return object.map((item) => sort(item, sorterOptions, key)).sort((a, b) => mySortFunction(a, b, key, relevantKeys, valuePriority));
         case Type.OBJECT: {
             const newObject = {};
             const sortedKeys = Reflect.ownKeys(object).sort((a, b) => {
@@ -101,6 +141,15 @@ function sort(object, sorterOptions, key) {
                     if (aKey === second && bKey === first) {
                         return 1;
                     }
+                }
+                // A sort-last key (e.g. actionOverrides.pageOrSobjectType)
+                // always sorts after every other sibling, pinned or not —
+                // the opposite end from customSortElements, so it's checked
+                // before any pin priority can put it back ahead.
+                const aSortsLast = isSortLast(sortLastKeys, key, aKey);
+                const bSortsLast = isSortLast(sortLastKeys, key, bKey);
+                if (aSortsLast !== bSortsLast) {
+                    return aSortsLast ? 1 : -1;
                 }
                 const aPriority = getCustomSortPriority(customSortKeys, key, aKey);
                 const bPriority = getCustomSortPriority(customSortKeys, key, bKey);

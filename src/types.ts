@@ -126,6 +126,8 @@ export type SorterOptions = {
     nonSortKeys?: string[];
     customSortElements?: SorterCustomKeys;
     keyOrderOverrides?: [string, string][];
+    sortLastKeys?: string[];
+    valuePriority?: { [containerKey: string]: string[] };
 };
 
 export type XMLParseOptions = {

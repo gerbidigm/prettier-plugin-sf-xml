@@ -52,3 +52,27 @@ test("Root.* self-closes every empty element under that root, by default for Flo
     expect(flowOut).toContain("<interviewLabel/>");
     expect(flowOut).toContain("<processType/>");
 });
+
+test("CustomMetadata and Dashboard self-close every empty element by default, like Flow", async () => {
+    const customMetadataXml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata">',
+        '    <label>Test</label>',
+        '    <protected></protected>',
+        '</CustomMetadata>',
+        ''
+    ].join("\n");
+    const customMetadataOut = await prettier.format(customMetadataXml, { parser: "sf-xml-parse", plugins: [plugin as any as string] });
+    expect(customMetadataOut).toContain("<protected/>");
+
+    const dashboardXml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<Dashboard xmlns="http://soap.sforce.com/2006/04/metadata">',
+        '    <title>Test</title>',
+        '    <runningUser></runningUser>',
+        '</Dashboard>',
+        ''
+    ].join("\n");
+    const dashboardOut = await prettier.format(dashboardXml, { parser: "sf-xml-parse", plugins: [plugin as any as string] });
+    expect(dashboardOut).toContain("<runningUser/>");
+});
