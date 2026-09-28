@@ -133,7 +133,7 @@ exports.defaultCustomSortElements = [
 // self-close every empty element under that root type — Flow metadata is
 // expected to self-close uniformly, unlike other schemas where only specific
 // elements are known to prefer it.
-exports.defaultSelfClosingElements = ["Layout.layoutColumns", "Flow.*", "CustomMetadata.*", "Dashboard.*"];
+exports.defaultSelfClosingElements = ["Layout.layoutColumns", "Flow.*", "CustomMetadata.*", "Dashboard.*", "QuickAction.*"];
 exports.xmlParseOptions = {
     trim: true
 };
