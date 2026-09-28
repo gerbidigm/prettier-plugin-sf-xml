@@ -11,10 +11,10 @@ import type { SorterOptions, XMLParseOptions, XMLBuilderOptions } from "./types"
 const flowCanvasElements = ["actionCalls", "assignments", "decisions", "dynamicChoiceSets", "recordLookups", "screens", "variables"];
 const flowCanvasFieldOrder = ["description", "name", "label", "locationX", "locationY"];
 
-// Nested Flow structures (a decision's rules, a screen's fields) only pin
-// `name` ahead of their siblings — description/label/locationX/locationY
-// sort naturally there instead of being pinned.
-const flowNestedNameOnlyElements = ["rules", "fields"];
+// Nested Flow structures (a decision's rules, a screen's fields, a choice)
+// only pin `name` ahead of their siblings — description/label/locationX/
+// locationY sort naturally there instead of being pinned.
+const flowNestedNameOnlyElements = ["choices", "rules", "fields"];
 
 // Report elements that pin `name` then `label` ahead of their other,
 // alphabetically-sorted siblings.
@@ -106,10 +106,12 @@ export const defaultCustomSortElements: string[] = [
 
 // Elements that render self-closing (`<tag/>`) instead of the default
 // explicit `<tag></tag>` pair when empty. Entries are either a bare element
-// name (applies under any root metadata type) or `Root.element` to scope it
-// to a specific root type (e.g. "Layout.layoutColumns"), for cases where a
-// given metadata schema is known to prefer the self-closing form.
-export const defaultSelfClosingElements: string[] = [];
+// name (applies under any root metadata type), `Root.element` to scope it
+// to a specific root type (e.g. "Layout.layoutColumns"), or `Root.*` to
+// self-close every empty element under that root type — Flow metadata is
+// expected to self-close uniformly, unlike other schemas where only specific
+// elements are known to prefer it.
+export const defaultSelfClosingElements: string[] = ["Flow.*"];
 
 export const xmlParseOptions: XMLParseOptions = {
     trim: true

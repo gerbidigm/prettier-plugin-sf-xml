@@ -89,12 +89,12 @@ const escapeTextQuotes = (xml: string): string => {
 // for Salesforce metadata, but some elements are known to be expected
 // self-closing for a given schema, so this collapses an empty-element pair to
 // `<tag/>` only for the elements the consumer has opted in via
-// `xmlSelfClosingElements` (either a bare tag name, or `Root.tag` to scope it
-// to one root metadata type).
+// `xmlSelfClosingElements` (either a bare tag name, `Root.tag` to scope it to
+// one root metadata type, or `Root.*` to match every tag under that root).
 const collapseSelfClosingTags = (xml: string, rootName: string, selfClosingElements: string[]): string => {
     const included = new Set(selfClosingElements);
     const isIncluded = (tagName: string): boolean =>
-        included.has(tagName) || included.has(`${rootName}.${tagName}`);
+        included.has(tagName) || included.has(`${rootName}.${tagName}`) || included.has(`${rootName}.*`);
 
     let output = "";
     let index = 0;

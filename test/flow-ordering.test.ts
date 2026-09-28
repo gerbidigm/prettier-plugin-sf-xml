@@ -85,4 +85,23 @@ describe("Flow canvas element ordering", () => {
             "<name>recordId</name>"
         ]);
     });
+
+    test("choices pin only name ahead of other fields", async () => {
+        const choicesXML = `<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <choices>
+        <choiceText>Yes</choiceText>
+        <dataType>Boolean</dataType>
+        <name>Yes_Choice</name>
+    </choices>
+</Flow>
+`;
+        const formatted = await format(choicesXML);
+
+        expectInOrder(formatted, [
+            "<name>Yes_Choice</name>",
+            "<choiceText>Yes</choiceText>",
+            "<dataType>Boolean</dataType>"
+        ]);
+    });
 });

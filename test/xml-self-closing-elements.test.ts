@@ -34,3 +34,21 @@ test("Root.tag opts an element into self-closing only under that root", async ()
     const outOtherRoot = await format({ xmlSelfClosingElements: ["OtherRoot.layoutColumns"] });
     expect(outOtherRoot).toContain("<layoutColumns></layoutColumns>");
 });
+
+test("Root.* self-closes every empty element under that root, by default for Flow", async () => {
+    const out = await format({ xmlSelfClosingElements: ["Layout.*"] });
+    expect(out).toContain("<layoutColumns/>");
+    expect(out).toContain("<otherThing/>");
+
+    const flowXml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<Flow xmlns="http://soap.sforce.com/2006/04/metadata">',
+        '    <interviewLabel></interviewLabel>',
+        '    <processType></processType>',
+        '</Flow>',
+        ''
+    ].join("\n");
+    const flowOut = await prettier.format(flowXml, { parser: "sf-xml-parse", plugins: [plugin as any as string] });
+    expect(flowOut).toContain("<interviewLabel/>");
+    expect(flowOut).toContain("<processType/>");
+});
