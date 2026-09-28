@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.xmlBuilderOptions = exports.xmlParseOptions = exports.defaultCustomSortElements = exports.sorterOptions = void 0;
+exports.xmlBuilderOptions = exports.xmlParseOptions = exports.defaultNonSelfClosingElements = exports.defaultCustomSortElements = exports.sorterOptions = void 0;
 exports.sorterOptions = {
     relevantKeys: {
         action: ["name"],
@@ -71,6 +71,12 @@ exports.defaultCustomSortElements = [
     "locationX",
     "locationY"
 ];
+// Elements that render as an explicit `<tag></tag>` pair instead of the
+// default self-closing `<tag/>` when empty. Entries are either a bare
+// element name (applies under any root metadata type) or `Root.element`
+// to scope the exception to a specific root type (e.g. "Layout.layoutColumns"),
+// for cases where a given metadata schema is quirky about self-closing tags.
+exports.defaultNonSelfClosingElements = [];
 exports.xmlParseOptions = {
     trim: true
 };
@@ -78,7 +84,7 @@ exports.xmlBuilderOptions = {
     xmldec: { version: "1.0", encoding: "UTF-8", standalone: null },
     renderOpts: {
         pretty: true,
-        allowEmpty: false,
+        allowEmpty: true,
         indent: '    ',
         newline: '\n'
     }

@@ -79,6 +79,7 @@ export type Options = Prettier.ParserOptions<any> & {
   xmlSelfClosingSpace: boolean;
   xmlWhitespaceSensitivity: "ignore" | "strict";
   xmlCustomSortElements: string[];
+  xmlNonSelfClosingElements: string[];
 };
 
 // We're going to change the signature of our parse function to accept our
