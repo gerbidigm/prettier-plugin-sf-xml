@@ -4,6 +4,7 @@ import * as xml2js from "xml2js";
 import type { Printer, SorterCustomKeys } from "./types";
 import { defaultCustomSortElements, defaultSelfClosingElements, sorterOptions, xmlBuilderOptions } from "./settings.js";
 import { sort } from "./sorter.js";
+import { restoreLeafComments } from "./commentPreservation.js";
 
 const buildCustomSortElements = (elements: string[]): SorterCustomKeys => {
     const customSortElements: SorterCustomKeys = {};
@@ -180,7 +181,7 @@ const printer: Printer = {
             sortedXML += "\n";
         }
 
-        return escapeTextQuotes(sortedXML);
+        return restoreLeafComments(escapeTextQuotes(sortedXML));
     }
 }
 

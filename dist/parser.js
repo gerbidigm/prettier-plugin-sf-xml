@@ -25,11 +25,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const xml2js = __importStar(require("xml2js"));
 const settings_js_1 = require("./settings.js");
+const commentPreservation_js_1 = require("./commentPreservation.js");
 const parser = {
     parse(text) {
         const parser = new xml2js.Parser(settings_js_1.xmlParseOptions);
         let parsedXML;
-        parser.parseString(text, function (err, result) {
+        parser.parseString((0, commentPreservation_js_1.protectLeafComments)(text), function (err, result) {
             if (!result) {
                 throw new SyntaxError(`An error occurred while parsing the XML data. Please ensure that the XML document is well-formed and valid according to the specified schema: ${err}`);
             }

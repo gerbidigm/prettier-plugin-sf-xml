@@ -26,6 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const xml2js = __importStar(require("xml2js"));
 const settings_js_1 = require("./settings.js");
 const sorter_js_1 = require("./sorter.js");
+const commentPreservation_js_1 = require("./commentPreservation.js");
 const buildCustomSortElements = (elements) => {
     const customSortElements = {};
     elements.forEach((key, index) => {
@@ -204,7 +205,7 @@ const printer = {
         if (!sortedXML.endsWith("\n")) {
             sortedXML += "\n";
         }
-        return escapeTextQuotes(sortedXML);
+        return (0, commentPreservation_js_1.restoreLeafComments)(escapeTextQuotes(sortedXML));
     }
 };
 exports.default = printer;
