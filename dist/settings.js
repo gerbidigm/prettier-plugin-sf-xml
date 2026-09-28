@@ -57,6 +57,7 @@ exports.sorterOptions = {
         "columns",
         "FlexiPage",
         "GlobalValueSet",
+        "groupingsDown",
         "Layout",
         "lookupFilter",
         "pathAssistantSteps",

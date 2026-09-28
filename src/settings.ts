@@ -58,6 +58,7 @@ export const sorterOptions: SorterOptions = {
         "columns",
         "FlexiPage",
         "GlobalValueSet",
+        "groupingsDown",
         "Layout",
         "lookupFilter",
         "pathAssistantSteps",
