@@ -51,6 +51,13 @@ exports.sorterOptions = {
         "sections",
         "StandardValueSet",
         "valueSetDefinition"
+    ],
+    // Alphabetical order gets these pairs wrong: Salesforce requires the
+    // first element of each pair before the second regardless of spelling.
+    // Unlike customSortElements, this only fixes the relative order of the
+    // pair and doesn't pin either key ahead of unrelated siblings.
+    keyOrderOverrides: [
+        ["targets", "targetConfigs"]
     ]
 };
 // The default priority order for elements that should be pinned ahead of
@@ -60,7 +67,6 @@ exports.sorterOptions = {
 // `fullName`/`name` here is a readability preference, not a canonicalization
 // requirement, and can be overridden per-project.
 exports.defaultCustomSortElements = [
-    "name",
     "fullName",
     "locationX",
     "locationY"

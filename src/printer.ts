@@ -86,12 +86,12 @@ const escapeTextQuotes = (xml: string): string => {
 const printer: Printer = {
     print(path, opts, print) {
         xmlBuilderOptions.renderOpts.indent = getTab(opts.tabWidth, opts.useTabs);
-        let builder = new xml2js.Builder(xmlBuilderOptions);
+        const builder = new xml2js.Builder(xmlBuilderOptions);
         const runtimeSorterOptions = {
             ...sorterOptions,
             customSortElements: buildCustomSortElements(opts.xmlCustomSortElements ?? defaultCustomSortElements)
         };
-        let sortedJsonObj = sort(path.getValue().parsedXML, runtimeSorterOptions, null);
+        const sortedJsonObj = sort(path.getValue().parsedXML, runtimeSorterOptions, null);
         let sortedXML = builder.buildObject(sortedJsonObj);
 
         // add new line at the end of the file if not exist

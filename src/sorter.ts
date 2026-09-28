@@ -67,6 +67,7 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
     const relevantKeys: SorterRelevantKeys = sorterOptions.relevantKeys ?? [];
     const nonSortKeys: string[] = sorterOptions.nonSortKeys ?? [];
     const customSortKeys: SorterCustomKeys = sorterOptions.customSortElements ?? {};
+    const keyOrderOverrides: [string, string][] = sorterOptions.keyOrderOverrides ?? [];
 
     if (nonSortKeys.includes(key)) {
         return object;
@@ -79,11 +80,26 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
         case Type.ARRAY:
             return object.map((item) => sort(item, sorterOptions, key)).sort((a, b) => mySortFunction(a, b, key!, relevantKeys));
 
-        case Type.OBJECT:
+        case Type.OBJECT: {
             const newObject: Record<string, any> = {};
             const sortedKeys = Reflect.ownKeys(object).sort((a, b) => {
                 const aKey = a.toString();
                 const bKey = b.toString();
+
+                // A key-order override expresses a relative-order requirement
+                // between two specific sibling keys (e.g. Salesforce requires
+                // `targets` before `targetConfigs` in a LightningComponentBundle)
+                // that alphabetical order gets wrong. Unlike customSortElements,
+                // this doesn't pin either key ahead of unrelated siblings.
+                for (const [first, second] of keyOrderOverrides) {
+                    if (aKey === first && bKey === second) {
+                        return -1;
+                    }
+                    if (aKey === second && bKey === first) {
+                        return 1;
+                    }
+                }
+
                 const aPriority = customSortKeys[aKey];
                 const bPriority = customSortKeys[bKey];
 
@@ -99,9 +115,10 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
                 return compareStrings(aKey, bKey);
             });
             sortedKeys.forEach((innerKey) => {
-            newObject[innerKey.toString()] = sort(object[innerKey.toString()], sorterOptions, innerKey.toString());
+                newObject[innerKey.toString()] = sort(object[innerKey.toString()], sorterOptions, innerKey.toString());
             });
             return newObject;
+        }
 
         default:
             throw new Error(`Unsupported type: ${typeof object}`);

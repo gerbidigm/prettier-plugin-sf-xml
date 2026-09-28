@@ -50,6 +50,13 @@ export const sorterOptions: SorterOptions = {
         "sections",
         "StandardValueSet",
         "valueSetDefinition"
+    ],
+    // Alphabetical order gets these pairs wrong: Salesforce requires the
+    // first element of each pair before the second regardless of spelling.
+    // Unlike customSortElements, this only fixes the relative order of the
+    // pair and doesn't pin either key ahead of unrelated siblings.
+    keyOrderOverrides: [
+        ["targets", "targetConfigs"]
     ]
 }
 

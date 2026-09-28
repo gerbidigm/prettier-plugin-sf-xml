@@ -46,16 +46,20 @@ const getIdentifierFromObject = (key, value, relevantKeys) => {
     const myRelevantKeys = (_a = relevantKeys[key]) !== null && _a !== void 0 ? _a : Object.keys(value);
     return myRelevantKeys.map((item) => getIdentifier(item, value[item], relevantKeys)).join('|');
 };
+function compareStrings(a, b) {
+    return a < b ? -1 : a > b ? 1 : 0;
+}
 const mySortFunction = (a, b, key, relevantKeys) => {
     const aIdentifier = getIdentifier(key, a, relevantKeys);
     const bIdentifier = getIdentifier(key, b, relevantKeys);
-    return aIdentifier.localeCompare(bIdentifier);
+    return compareStrings(aIdentifier, bIdentifier);
 };
 function sort(object, sorterOptions, key) {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const relevantKeys = (_a = sorterOptions.relevantKeys) !== null && _a !== void 0 ? _a : [];
     const nonSortKeys = (_b = sorterOptions.nonSortKeys) !== null && _b !== void 0 ? _b : [];
     const customSortKeys = (_c = sorterOptions.customSortElements) !== null && _c !== void 0 ? _c : {};
+    const keyOrderOverrides = (_d = sorterOptions.keyOrderOverrides) !== null && _d !== void 0 ? _d : [];
     if (nonSortKeys.includes(key)) {
         return object;
     }
@@ -64,11 +68,24 @@ function sort(object, sorterOptions, key) {
             return object;
         case Type.ARRAY:
             return object.map((item) => sort(item, sorterOptions, key)).sort((a, b) => mySortFunction(a, b, key, relevantKeys));
-        case Type.OBJECT:
+        case Type.OBJECT: {
             const newObject = {};
             const sortedKeys = Reflect.ownKeys(object).sort((a, b) => {
                 const aKey = a.toString();
                 const bKey = b.toString();
+                // A key-order override expresses a relative-order requirement
+                // between two specific sibling keys (e.g. Salesforce requires
+                // `targets` before `targetConfigs` in a LightningComponentBundle)
+                // that alphabetical order gets wrong. Unlike customSortElements,
+                // this doesn't pin either key ahead of unrelated siblings.
+                for (const [first, second] of keyOrderOverrides) {
+                    if (aKey === first && bKey === second) {
+                        return -1;
+                    }
+                    if (aKey === second && bKey === first) {
+                        return 1;
+                    }
+                }
                 const aPriority = customSortKeys[aKey];
                 const bPriority = customSortKeys[bKey];
                 if (aPriority !== undefined && bPriority !== undefined) {
@@ -80,12 +97,13 @@ function sort(object, sorterOptions, key) {
                 if (bPriority !== undefined) {
                     return 1;
                 }
-                return aKey.localeCompare(bKey);
+                return compareStrings(aKey, bKey);
             });
             sortedKeys.forEach((innerKey) => {
                 newObject[innerKey.toString()] = sort(object[innerKey.toString()], sorterOptions, innerKey.toString());
             });
             return newObject;
+        }
         default:
             throw new Error(`Unsupported type: ${typeof object}`);
     }

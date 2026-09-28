@@ -67,6 +67,21 @@ test("repeated child arrays still sort by their relevant key", () => {
     expect(result.fieldPermissions.map((item: any) => item.field[0])).toEqual(["Case.Alpha", "Case.Zeta"]);
 });
 
+test("keyOrderOverrides forces targets before targetConfigs despite alphabetical order", () => {
+    const options: SorterOptions = {
+        keyOrderOverrides: [["targets", "targetConfigs"]]
+    };
+    const input = {
+        targetConfigs: ["config"],
+        apiVersion: ["58.0"],
+        targets: ["target"]
+    };
+
+    const result = sort(input, options, "LightningComponentBundle");
+
+    expect(Object.keys(result)).toEqual(["apiVersion", "targets", "targetConfigs"]);
+});
+
 test("underscore-containing names sort by plain codepoint order, not locale collation", () => {
     const options: SorterOptions = {
         relevantKeys: {

@@ -113,12 +113,12 @@ const printer = {
     print(path, opts, print) {
         var _a;
         settings_js_1.xmlBuilderOptions.renderOpts.indent = getTab(opts.tabWidth, opts.useTabs);
-        let builder = new xml2js.Builder(settings_js_1.xmlBuilderOptions);
+        const builder = new xml2js.Builder(settings_js_1.xmlBuilderOptions);
         const runtimeSorterOptions = {
             ...settings_js_1.sorterOptions,
             customSortElements: buildCustomSortElements((_a = opts.xmlCustomSortElements) !== null && _a !== void 0 ? _a : settings_js_1.defaultCustomSortElements)
         };
-        let sortedJsonObj = (0, sorter_js_1.sort)(path.getValue().parsedXML, runtimeSorterOptions, null);
+        const sortedJsonObj = (0, sorter_js_1.sort)(path.getValue().parsedXML, runtimeSorterOptions, null);
         let sortedXML = builder.buildObject(sortedJsonObj);
         // add new line at the end of the file if not exist
         if (!sortedXML.endsWith("\n")) {

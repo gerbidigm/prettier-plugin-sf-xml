@@ -39,6 +39,11 @@
         "prettier"
     ],
     "eslintConfig": {
+        "ignorePatterns": [
+            "dist/",
+            "coverage/",
+            "src/languages.js"
+        ],
         "extends": [
             "eslint:recommended",
             "prettier"
@@ -53,7 +58,24 @@
         "parserOptions": {
             "ecmaVersion": 2020,
             "sourceType": "module"
-        }
+        },
+        "overrides": [
+            {
+                "files": ["*.ts"],
+                "parser": "@typescript-eslint/parser",
+                "plugins": ["@typescript-eslint"],
+                "extends": [
+                    "plugin:@typescript-eslint/recommended",
+                    "prettier"
+                ],
+                "rules": {
+                    "no-unused-vars": "off",
+                    "@typescript-eslint/no-unused-vars": "off",
+                    "@typescript-eslint/no-explicit-any": "off",
+                    "@typescript-eslint/no-non-null-assertion": "off"
+                }
+            }
+        ]
     },
     "jest": {
         "preset": "ts-jest",
