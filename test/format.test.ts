@@ -87,6 +87,26 @@ describe("CustomField with formula and picklist values", () => {
     });
 });
 
+describe("Report", () => {
+    test("name is no longer pinned; siblings sort alphabetically", async () => {
+        const reportXML = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<Report xmlns="http://soap.sforce.com/2006/04/metadata">',
+            '    <reportType>SomeType</reportType>',
+            '    <name>My Report</name>',
+            '    <description>desc</description>',
+            '</Report>',
+            ''
+        ].join("\n");
+
+        const formatted = await format(reportXML);
+
+        const orderedTags = [...formatted.matchAll(/^ {2}<(\w+)>/gm)].map((match) => match[1]);
+
+        expect(orderedTags).toEqual(["description", "name", "reportType"]);
+    });
+});
+
 describe("xmlCustomSortElements option", () => {
     test("defaults to pinning only fullName, letting label sort alphabetically", async () => {
         const formatted = await format(canonicalCustomField);

@@ -60,7 +60,6 @@ export const sorterOptions: SorterOptions = {
 // `fullName`/`name` here is a readability preference, not a canonicalization
 // requirement, and can be overridden per-project.
 export const defaultCustomSortElements: string[] = [
-    "name",
     "fullName",
     "locationX",
     "locationY"
