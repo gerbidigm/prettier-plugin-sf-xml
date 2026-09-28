@@ -52,11 +52,15 @@ const getIdentifierFromObject = (key: string, value: Record<string, any>, releva
     return myRelevantKeys.map((item) => getIdentifier(item, value[item], relevantKeys)).join('|');
 }
 
+function compareStrings(a: string, b: string): number {
+    return a < b ? -1 : a > b ? 1 : 0;
+}
+
 const mySortFunction = (a: any, b: any, key: string, relevantKeys: SorterRelevantKeys): number => {
     const aIdentifier: string = getIdentifier(key, a, relevantKeys);
     const bIdentifier: string = getIdentifier(key, b, relevantKeys);
 
-    return aIdentifier.localeCompare(bIdentifier);
+    return compareStrings(aIdentifier, bIdentifier);
 }
 
 function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
@@ -92,7 +96,7 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
                 if (bPriority !== undefined) {
                     return 1;
                 }
-                return aKey.localeCompare(bKey);
+                return compareStrings(aKey, bKey);
             });
             sortedKeys.forEach((innerKey) => {
             newObject[innerKey.toString()] = sort(object[innerKey.toString()], sorterOptions, innerKey.toString());

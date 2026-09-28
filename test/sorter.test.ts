@@ -66,3 +66,24 @@ test("repeated child arrays still sort by their relevant key", () => {
 
     expect(result.fieldPermissions.map((item: any) => item.field[0])).toEqual(["Case.Alpha", "Case.Zeta"]);
 });
+
+test("underscore-containing names sort by plain codepoint order, not locale collation", () => {
+    const options: SorterOptions = {
+        relevantKeys: {
+            fieldPermissions: ["field"]
+        }
+    };
+    const input = {
+        fieldPermissions: [
+            { field: ["Logo_Use_Request__c.External_Key__c"] },
+            { field: ["Logo_Use_Request_Contact_Role__c.External_Key__c"] }
+        ]
+    };
+
+    const result = sort(input, options, "Parent");
+
+    expect(result.fieldPermissions.map((item: any) => item.field[0])).toEqual([
+        "Logo_Use_Request_Contact_Role__c.External_Key__c",
+        "Logo_Use_Request__c.External_Key__c"
+    ]);
+});
