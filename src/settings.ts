@@ -28,6 +28,14 @@ const reportLabelNameFieldOrder = ["name", "label"];
 const flowNameLabelElements = ["recordCreates", "customErrors"];
 const flowNameLabelFieldOrder = ["name", "label"];
 
+// xml2js parses a tag's attributes into an object under the "$" key, in
+// whatever order they appeared in the source. Salesforce's namespaced root
+// elements (xmlns, then xmlns:xsi, then xmlns:xsd, whichever are present)
+// need that exact order — alphabetical sorting flips xsi/xsd since "d" <
+// "i" — so this pins them the same way any other element's children are
+// pinned, scoped to the "$" attribute container.
+const xmlAttributeOrder = ["xmlns", "xmlns:xsi", "xmlns:xsd"];
+
 export const sorterOptions: SorterOptions = {
     relevantKeys: {
         ...Object.fromEntries(flowCanvasElements.map((element) => [element, ["name"]])),
@@ -114,6 +122,7 @@ export const sorterOptions: SorterOptions = {
 // anything past `fullName` here is a readability preference, not a
 // canonicalization requirement, and can be overridden per-project.
 export const defaultCustomSortElements: string[] = [
+    ...xmlAttributeOrder.map((attr) => `$.${attr}`),
     ...flowCanvasElements.flatMap((element) => flowCanvasFieldOrder.map((field) => `${element}.${field}`)),
     ...flowNestedNameOnlyElements.map((element) => `${element}.name`),
     ...reportLabelNameElements.flatMap((element) => reportLabelNameFieldOrder.map((field) => `${element}.${field}`)),
