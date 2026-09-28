@@ -21,6 +21,13 @@ const flowNestedNameOnlyElements = ["choices", "rules", "fields"];
 const reportLabelNameElements = ["loops", "recordUpdates"];
 const reportLabelNameFieldOrder = ["name", "label"];
 
+// Flow canvas elements that pin only `name` then `label` ahead of their
+// other siblings — unlike flowCanvasElements above, these aren't confirmed
+// to also pin description/locationX/locationY, so only name/label are
+// scoped here.
+const flowNameLabelElements = ["recordCreates"];
+const flowNameLabelFieldOrder = ["name", "label"];
+
 export const sorterOptions: SorterOptions = {
     relevantKeys: {
         ...Object.fromEntries(flowCanvasElements.map((element) => [element, ["name"]])),
@@ -99,6 +106,7 @@ export const defaultCustomSortElements: string[] = [
     ...flowCanvasElements.flatMap((element) => flowCanvasFieldOrder.map((field) => `${element}.${field}`)),
     ...flowNestedNameOnlyElements.map((element) => `${element}.name`),
     ...reportLabelNameElements.flatMap((element) => reportLabelNameFieldOrder.map((field) => `${element}.${field}`)),
+    ...flowNameLabelElements.flatMap((element) => flowNameLabelFieldOrder.map((field) => `${element}.${field}`)),
     "fullName",
     "locationX",
     "locationY"

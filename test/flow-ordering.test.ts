@@ -104,4 +104,46 @@ describe("Flow canvas element ordering", () => {
             "<dataType>Boolean</dataType>"
         ]);
     });
+
+    test("recordCreates pins name then label ahead of locationX/locationY and other fields", async () => {
+        const recordCreatesXML = `<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <recordCreates>
+        <locationX>176</locationX>
+        <locationY>431</locationY>
+        <label>Create Record</label>
+        <name>Create_Record</name>
+        <object>Account</object>
+    </recordCreates>
+</Flow>
+`;
+        const formatted = await format(recordCreatesXML);
+
+        expectInOrder(formatted, [
+            "<name>Create_Record</name>",
+            "<label>Create Record</label>",
+            "<locationX>176</locationX>",
+            "<locationY>431</locationY>",
+            "<object>Account</object>"
+        ]);
+    });
+
+    test("Flow self-closes empty elements everywhere, including dynamicChoiceSets children", async () => {
+        const dynamicChoiceSetsXML = `<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <dynamicChoiceSets>
+        <name>My_Choice_Set</name>
+        <collectionReference></collectionReference>
+        <displayField>Name</displayField>
+        <outputAssignments></outputAssignments>
+    </dynamicChoiceSets>
+</Flow>
+`;
+        const formatted = await format(dynamicChoiceSetsXML);
+
+        expect(formatted).toContain("<collectionReference/>");
+        expect(formatted).toContain("<outputAssignments/>");
+        expect(formatted).not.toContain("</collectionReference>");
+        expect(formatted).not.toContain("</outputAssignments>");
+    });
 });
