@@ -1,0 +1,88 @@
+import * as fs from "fs";
+import * as path from "path";
+import * as prettier from "prettier";
+
+import plugin from "../src/plugin";
+
+const flowXML = fs.readFileSync(path.join(__dirname, "./license-preset-resolver.flow-meta.xml"), "utf-8");
+
+function format(content: string) {
+    return prettier.format(content, {
+        parser: "sf-xml-parse",
+        plugins: [plugin as any as string]
+    });
+}
+
+function expectInOrder(haystack: string, needles: string[]) {
+    let searchFrom = 0;
+    needles.forEach((needle) => {
+        const index = haystack.indexOf(needle, searchFrom);
+        expect(index).toBeGreaterThanOrEqual(searchFrom);
+        searchFrom = index + needle.length;
+    });
+}
+
+describe("Flow canvas element ordering", () => {
+    test("actionCalls pins description, name, label, locationX, locationY ahead of other fields", async () => {
+        const formatted = await format(flowXML);
+
+        expectInOrder(formatted, [
+            "<description>Resolves the selected active preset",
+            "<name>Resolve_License_Preset</name>",
+            "<label>Resolve License Preset</label>",
+            "<locationX>320</locationX>",
+            "<locationY>360</locationY>",
+            "<actionName>LicensePresetResolver</actionName>"
+        ]);
+    });
+
+    test("decisions.rules pins only name, letting label sort naturally", async () => {
+        const formatted = await format(flowXML);
+
+        expectInOrder(formatted, [
+            "<name>Found_Active_Preset</name>",
+            "<conditionLogic>and</conditionLogic>",
+            "<conditions>",
+            "<connector>",
+            "<label>Active preset found</label>"
+        ]);
+    });
+
+    test("screens.fields pins only name, letting fieldText/fieldType sort naturally", async () => {
+        const formatted = await format(flowXML);
+
+        expectInOrder(formatted, [
+            "<name>Selected_Preset_Key</name>",
+            "<choiceReferences>Active_License_Presets</choiceReferences>",
+            "<dataType>String</dataType>",
+            "<fieldText>Select an active license preset</fieldText>"
+        ]);
+    });
+
+    test("screens sort by their pinned name", async () => {
+        const formatted = await format(flowXML);
+
+        expectInOrder(formatted, [
+            "<name>No_Active_Presets</name>",
+            "<name>Resolution_Error</name>",
+            "<name>Resolution_Fault</name>",
+            "<name>Resolution_Success</name>",
+            "<name>Select_License_Preset</name>"
+        ]);
+    });
+
+    test("variables pin description and name ahead of other fields, and sort by name", async () => {
+        const formatted = await format(flowXML);
+
+        expectInOrder(formatted, [
+            "<description>Technical fault detail retained",
+            "<name>faultDetail</name>",
+            "<dataType>String</dataType>"
+        ]);
+
+        expectInOrder(formatted, [
+            "<name>faultDetail</name>",
+            "<name>recordId</name>"
+        ]);
+    });
+});

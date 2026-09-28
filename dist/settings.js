@@ -1,8 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.xmlBuilderOptions = exports.xmlParseOptions = exports.defaultSelfClosingElements = exports.defaultCustomSortElements = exports.sorterOptions = void 0;
+// Flow canvas elements pin description/name/label/locationX/locationY (in
+// that order, whichever are present) ahead of their other, alphabetically-
+// sorted properties, and sibling elements of the same type sort by their
+// `name` specifically (not by the full pinned-field identifier — otherwise
+// a present `description` would outrank `name` as the sort key). This is
+// confirmed for these container keys; other Flow canvas element types
+// (waits, subflows, loops, etc.) likely follow the same convention but
+// haven't been verified yet, so add them here as they come up.
+const flowCanvasElements = ["actionCalls", "assignments", "decisions", "dynamicChoiceSets", "recordLookups", "screens", "variables"];
+const flowCanvasFieldOrder = ["description", "name", "label", "locationX", "locationY"];
+// Nested Flow structures (a decision's rules, a screen's fields) only pin
+// `name` ahead of their siblings — description/label/locationX/locationY
+// sort naturally there instead of being pinned.
+const flowNestedNameOnlyElements = ["rules", "fields"];
 exports.sorterOptions = {
     relevantKeys: {
+        ...Object.fromEntries(flowCanvasElements.map((element) => [element, ["name"]])),
         action: ["name"],
         actionOverrides: ["actionName"],
         alerts: ["fullName"],
@@ -62,11 +77,18 @@ exports.sorterOptions = {
 };
 // The default priority order for elements that should be pinned ahead of
 // their alphabetically-sorted siblings, used when the consumer doesn't
-// override `xmlCustomSortElements`. Salesforce's own canonical (retrieved)
-// XML only ever pins the identifier element first, so anything past
-// `fullName`/`name` here is a readability preference, not a canonicalization
-// requirement, and can be overridden per-project.
+// override `xmlCustomSortElements`. Entries are either a bare element name
+// (pinned wherever it appears) or `Container.element` to scope the pin to
+// elements nested directly under a specific container key (e.g.
+// "actionCalls.description"), since the same field name can need different
+// treatment depending on what it's nested under — see flowCanvasElements
+// and flowNestedNameOnlyElements above. Outside of Flow, Salesforce's own
+// canonical (retrieved) XML only ever pins the identifier element first, so
+// anything past `fullName` here is a readability preference, not a
+// canonicalization requirement, and can be overridden per-project.
 exports.defaultCustomSortElements = [
+    ...flowCanvasElements.flatMap((element) => flowCanvasFieldOrder.map((field) => `${element}.${field}`)),
+    ...flowNestedNameOnlyElements.map((element) => `${element}.name`),
     "fullName",
     "locationX",
     "locationY"

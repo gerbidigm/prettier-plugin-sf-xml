@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <locationX>320</locationX>
+        <locationY>360</locationY>
+        <actionName>LicensePresetResolver</actionName>
+        <actionType>apex</actionType>
+        <description>Resolves the selected active preset and writes the immutable snapshot on the Draft License Request.</description>
+        <faultConnector>
+            <targetReference>Capture_Resolution_Fault</targetReference>
+        </faultConnector>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>licenseRequestId</name>
+            <value>
+                <elementReference>recordId</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>presetKey</name>
+            <value>
+                <elementReference>Select_License_Preset.Selected_Preset_Key</elementReference>
+            </value>
+        </inputParameters>
+        <label>Resolve License Preset</label>
+        <name>Resolve_License_Preset</name>
+        <nameSegment>LicensePresetResolver</nameSegment>
+        <offset>0</offset>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </actionCalls>
+    <apiVersion>66.0</apiVersion>
+    <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
+    <assignments>
+        <locationX>800</locationX>
+        <locationY>480</locationY>
+        <assignmentItems>
+            <assignToReference>faultDetail</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>$Flow.FaultMessage</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Resolution_Fault</targetReference>
+        </connector>
+        <description>Captures technical fault detail for administrator diagnostics while the following screen shows only a safe user message.</description>
+        <label>Capture Resolution Fault</label>
+        <name>Capture_Resolution_Fault</name>
+    </assignments>
+    <decisions>
+        <locationX>320</locationX>
+        <locationY>120</locationY>
+        <defaultConnector>
+            <targetReference>No_Active_Presets</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>No active preset</defaultConnectorLabel>
+        <description>Checks whether at least one active preset is available before showing the selector.</description>
+        <label>Active Preset Available?</label>
+        <name>Active_Preset_Available</name>
+        <rules>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Get_Active_License_Preset.Id</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Select_License_Preset</targetReference>
+            </connector>
+            <label>Active preset found</label>
+            <name>Found_Active_Preset</name>
+        </rules>
+    </decisions>
+    <decisions>
+        <locationX>320</locationX>
+        <locationY>480</locationY>
+        <defaultConnector>
+            <targetReference>Resolution_Error</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Resolver returned an error</defaultConnectorLabel>
+        <description>Checks whether the resolver returned a successful outcome instead of a structured business error.</description>
+        <label>Resolution Succeeded?</label>
+        <name>Resolution_Succeeded</name>
+        <rules>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>Resolve_License_Preset.isSuccess</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Resolution_Success</targetReference>
+            </connector>
+            <label>Success</label>
+            <name>Success</name>
+        </rules>
+    </decisions>
+    <description>Screen Flow for selecting an active License_Preset__mdt record and invoking LicensePresetResolver for a Draft License_Request__c. The Flow only orchestrates selection and outcome display; the resolver owns canonical claims and snapshot writes. Requirement: Resolved preset snapshot is commercial payload.</description>
+    <dynamicChoiceSets>
+        <dataType>String</dataType>
+        <displayField>DeveloperName</displayField>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Active__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </filters>
+        <name>Active_License_Presets</name>
+        <object>License_Preset__mdt</object>
+        <sortField>DeveloperName</sortField>
+        <sortOrder>Asc</sortOrder>
+        <valueField>DeveloperName</valueField>
+    </dynamicChoiceSets>
+    <environments>Default</environments>
+    <interviewLabel>Resolve License Preset {!$Flow.CurrentDateTime}</interviewLabel>
+    <isOverridable>true</isOverridable>
+    <label>Resolve License Preset</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>Flow</processType>
+    <recordLookups>
+        <locationX>320</locationX>
+        <locationY>40</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Active_Preset_Available</targetReference>
+        </connector>
+        <description>Finds one active preset so the Flow can show a useful empty-catalog screen before rendering the filtered choice set.</description>
+        <faultConnector>
+            <targetReference>Capture_Resolution_Fault</targetReference>
+        </faultConnector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Active__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <label>Get Active License Preset</label>
+        <name>Get_Active_License_Preset</name>
+        <object>License_Preset__mdt</object>
+        <queriedFields>Id</queriedFields>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <screens>
+        <locationX>160</locationX>
+        <locationY>600</locationY>
+        <allowBack>false</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <fieldText>The license preset was resolved successfully.</fieldText>
+            <fieldType>DisplayText</fieldType>
+            <name>Resolution_Success_Message</name>
+            <styleProperties>
+                <verticalAlignment>
+                    <stringValue>top</stringValue>
+                </verticalAlignment>
+                <width>
+                    <stringValue>12</stringValue>
+                </width>
+            </styleProperties>
+        </fields>
+        <label>License Preset Resolved</label>
+        <name>Resolution_Success</name>
+        <showFooter>true</showFooter>
+        <showHeader>true</showHeader>
+    </screens>
+    <screens>
+        <locationX>320</locationX>
+        <locationY>240</locationY>
+        <allowBack>false</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <choiceReferences>Active_License_Presets</choiceReferences>
+            <dataType>String</dataType>
+            <fieldText>Select an active license preset</fieldText>
+            <fieldType>DropdownBox</fieldType>
+            <isRequired>true</isRequired>
+            <name>Selected_Preset_Key</name>
+        </fields>
+        <helpText>Selecting a preset resolves the commercial snapshot for this Draft request.</helpText>
+        <label>Select License Preset</label>
+        <name>Select_License_Preset</name>
+        <showFooter>true</showFooter>
+        <showHeader>true</showHeader>
+    </screens>
+    <screens>
+        <locationX>480</locationX>
+        <locationY>600</locationY>
+        <allowBack>false</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <fieldText>The license preset was not resolved. {!Resolve_License_Preset.errorMessage} No manual snapshot change was made.</fieldText>
+            <fieldType>DisplayText</fieldType>
+            <name>Resolution_Error_Message</name>
+            <styleProperties>
+                <verticalAlignment>
+                    <stringValue>top</stringValue>
+                </verticalAlignment>
+                <width>
+                    <stringValue>12</stringValue>
+                </width>
+            </styleProperties>
+        </fields>
+        <label>License Preset Was Not Resolved</label>
+        <name>Resolution_Error</name>
+        <showFooter>true</showFooter>
+        <showHeader>true</showHeader>
+    </screens>
+    <screens>
+        <locationX>640</locationX>
+        <locationY>240</locationY>
+        <allowBack>false</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <fieldText>No active license presets are available. Ask an administrator to activate a preset before resolving this Draft request.</fieldText>
+            <fieldType>DisplayText</fieldType>
+            <name>No_Active_Presets_Message</name>
+            <styleProperties>
+                <verticalAlignment>
+                    <stringValue>top</stringValue>
+                </verticalAlignment>
+                <width>
+                    <stringValue>12</stringValue>
+                </width>
+            </styleProperties>
+        </fields>
+        <label>No Active License Presets</label>
+        <name>No_Active_Presets</name>
+        <showFooter>true</showFooter>
+        <showHeader>true</showHeader>
+    </screens>
+    <screens>
+        <locationX>800</locationX>
+        <locationY>600</locationY>
+        <allowBack>false</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <fieldText>License preset resolution did not complete. No manual snapshot change was made. Contact your administrator if this continues.</fieldText>
+            <fieldType>DisplayText</fieldType>
+            <name>Resolution_Fault_Message</name>
+            <styleProperties>
+                <verticalAlignment>
+                    <stringValue>top</stringValue>
+                </verticalAlignment>
+                <width>
+                    <stringValue>12</stringValue>
+                </width>
+            </styleProperties>
+        </fields>
+        <label>License Preset Resolution Failed</label>
+        <name>Resolution_Fault</name>
+        <showFooter>true</showFooter>
+        <showHeader>true</showHeader>
+    </screens>
+    <start>
+        <locationX>320</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Get_Active_License_Preset</targetReference>
+        </connector>
+    </start>
+    <status>Draft</status>
+    <variables>
+        <dataType>String</dataType>
+        <description>License Request record supplied by the native record-action context.</description>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+        <name>recordId</name>
+    </variables>
+    <variables>
+        <dataType>String</dataType>
+        <description>Technical fault detail retained for administrator diagnostics; never shown as raw text to the user.</description>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <name>faultDetail</name>
+    </variables>
+</Flow>

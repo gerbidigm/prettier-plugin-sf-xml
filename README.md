@@ -30,9 +30,11 @@ The `prettier` executable is now installed and ready for use:
 
 ### `xmlCustomSortElements`
 
-Element names that are pinned ahead of their alphabetically-sorted siblings, in priority order. Defaults to `["fullName", "locationX", "locationY"]`.
+Element names that are pinned ahead of their alphabetically-sorted siblings, in priority order. Entries are either a bare element name (pinned wherever it appears) or `Container.element` to scope the pin to elements nested directly under a specific container key, since the same field name can need different treatment depending on what it's nested under.
 
-Salesforce's own canonical (retrieved) metadata XML only ever pins the identifier element (`fullName`) first — everything else sorts alphabetically. If you round-trip files through an org and want your local formatting to match that exactly, narrow this option in your prettier config:
+Defaults to pinning `fullName`/`locationX`/`locationY` generally, plus Flow-specific container scoping: canvas elements (`actionCalls`, `assignments`, `decisions`, `dynamicChoiceSets`, `recordLookups`, `screens`, `variables`) pin `description`, `name`, `label`, `locationX`, `locationY` (whichever are present, in that order) ahead of their other fields, while nested structures (`rules`, `fields`) pin only `name`. This matches how Salesforce's own Flow Builder serializes those elements; sibling elements of the same type (e.g. multiple `screens`) also sort by their `name` as a result.
+
+Salesforce's own canonical (retrieved) metadata XML only ever pins the identifier element (`fullName`) first for most other metadata types — everything else sorts alphabetically. If you round-trip files through an org and want your local formatting to match that exactly, narrow this option in your prettier config:
 
 ```json
 {

@@ -56,6 +56,23 @@ function compareStrings(a: string, b: string): number {
     return a < b ? -1 : a > b ? 1 : 0;
 }
 
+// Looks up a child key's pin priority, preferring an entry scoped to the
+// immediate container key (e.g. "actionCalls.description") over a bare,
+// unscoped entry (e.g. "fullName"). Container-scoped entries let the same
+// child key name (like "name" or "label") get pinned differently depending
+// on which element it appears under — Salesforce's Flow metadata pins
+// description/name/label/locationX/locationY on canvas elements like
+// actionCalls, but only pins name on nested structures like rules or fields.
+function getCustomSortPriority(customSortKeys: SorterCustomKeys, containerKey: string | undefined, childKey: string): number | undefined {
+    if (containerKey !== undefined) {
+        const scopedPriority = customSortKeys[`${containerKey}.${childKey}`];
+        if (scopedPriority !== undefined) {
+            return scopedPriority;
+        }
+    }
+    return customSortKeys[childKey];
+}
+
 const mySortFunction = (a: any, b: any, key: string, relevantKeys: SorterRelevantKeys): number => {
     const aIdentifier: string = getIdentifier(key, a, relevantKeys);
     const bIdentifier: string = getIdentifier(key, b, relevantKeys);
@@ -100,8 +117,8 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
                     }
                 }
 
-                const aPriority = customSortKeys[aKey];
-                const bPriority = customSortKeys[bKey];
+                const aPriority = getCustomSortPriority(customSortKeys, key, aKey);
+                const bPriority = getCustomSortPriority(customSortKeys, key, bKey);
 
                 if (aPriority !== undefined && bPriority !== undefined) {
                     return aPriority - bPriority;
