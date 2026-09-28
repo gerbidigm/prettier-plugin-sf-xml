@@ -128,6 +128,31 @@ describe("Flow canvas element ordering", () => {
         ]);
     });
 
+    test("customErrors pins name then label ahead of locationX/locationY and other fields", async () => {
+        const customErrorsXML = `<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customErrors>
+        <locationX>176</locationX>
+        <locationY>431</locationY>
+        <label>Custom Error</label>
+        <name>Custom_Error</name>
+        <customErrorMessages>
+            <errorMessage>Bad</errorMessage>
+        </customErrorMessages>
+    </customErrors>
+</Flow>
+`;
+        const formatted = await format(customErrorsXML);
+
+        expectInOrder(formatted, [
+            "<name>Custom_Error</name>",
+            "<label>Custom Error</label>",
+            "<locationX>176</locationX>",
+            "<locationY>431</locationY>",
+            "<customErrorMessages>"
+        ]);
+    });
+
     test("Flow self-closes empty elements everywhere, including dynamicChoiceSets children", async () => {
         const dynamicChoiceSetsXML = `<?xml version="1.0" encoding="UTF-8"?>
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">

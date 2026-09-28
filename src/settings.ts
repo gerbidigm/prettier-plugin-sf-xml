@@ -25,7 +25,7 @@ const reportLabelNameFieldOrder = ["name", "label"];
 // other siblings — unlike flowCanvasElements above, these aren't confirmed
 // to also pin description/locationX/locationY, so only name/label are
 // scoped here.
-const flowNameLabelElements = ["recordCreates"];
+const flowNameLabelElements = ["recordCreates", "customErrors"];
 const flowNameLabelFieldOrder = ["name", "label"];
 
 export const sorterOptions: SorterOptions = {
