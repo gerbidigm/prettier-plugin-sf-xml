@@ -15,6 +15,10 @@ const flowCanvasFieldOrder = ["description", "name", "label", "locationX", "loca
 // `name` ahead of their siblings — description/label/locationX/locationY
 // sort naturally there instead of being pinned.
 const flowNestedNameOnlyElements = ["rules", "fields"];
+// Report elements that pin `label` then `name` ahead of their other,
+// alphabetically-sorted siblings.
+const reportLabelNameElements = ["loops", "recordUpdates"];
+const reportLabelNameFieldOrder = ["label", "name"];
 exports.sorterOptions = {
     relevantKeys: {
         ...Object.fromEntries(flowCanvasElements.map((element) => [element, ["name"]])),
@@ -91,6 +95,7 @@ exports.sorterOptions = {
 exports.defaultCustomSortElements = [
     ...flowCanvasElements.flatMap((element) => flowCanvasFieldOrder.map((field) => `${element}.${field}`)),
     ...flowNestedNameOnlyElements.map((element) => `${element}.name`),
+    ...reportLabelNameElements.flatMap((element) => reportLabelNameFieldOrder.map((field) => `${element}.${field}`)),
     "fullName",
     "locationX",
     "locationY"
