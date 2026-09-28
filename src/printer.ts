@@ -2,7 +2,7 @@
 import * as xml2js from "xml2js";
 
 import type { Printer, SorterCustomKeys } from "./types";
-import { defaultCustomSortElements, defaultNonSelfClosingElements, sorterOptions, xmlBuilderOptions } from "./settings.js";
+import { defaultCustomSortElements, defaultSelfClosingElements, sorterOptions, xmlBuilderOptions } from "./settings.js";
 import { sort } from "./sorter.js";
 
 const buildCustomSortElements = (elements: string[]): SorterCustomKeys => {
@@ -84,16 +84,16 @@ const escapeTextQuotes = (xml: string): string => {
 };
 
 // xml2js's builder always renders empty elements as an explicit `<tag></tag>`
-// pair (see xmlBuilderOptions.renderOpts.allowEmpty). Most Salesforce metadata
-// prefers the self-closing form, but a handful of elements are quirky about
-// it depending on the schema, so this collapses every empty-element pair to
-// `<tag/>` except the ones the consumer has opted out of via
-// `xmlNonSelfClosingElements` (either a bare tag name, or `Root.tag` to scope
-// the exception to one root metadata type).
-const collapseSelfClosingTags = (xml: string, rootName: string, nonSelfClosingElements: string[]): string => {
-    const exceptions = new Set(nonSelfClosingElements);
-    const isExcluded = (tagName: string): boolean =>
-        exceptions.has(tagName) || exceptions.has(`${rootName}.${tagName}`);
+// pair (see xmlBuilderOptions.renderOpts.allowEmpty). That's the right default
+// for Salesforce metadata, but some elements are known to be expected
+// self-closing for a given schema, so this collapses an empty-element pair to
+// `<tag/>` only for the elements the consumer has opted in via
+// `xmlSelfClosingElements` (either a bare tag name, or `Root.tag` to scope it
+// to one root metadata type).
+const collapseSelfClosingTags = (xml: string, rootName: string, selfClosingElements: string[]): string => {
+    const included = new Set(selfClosingElements);
+    const isIncluded = (tagName: string): boolean =>
+        included.has(tagName) || included.has(`${rootName}.${tagName}`);
 
     let output = "";
     let index = 0;
@@ -143,7 +143,7 @@ const collapseSelfClosingTags = (xml: string, rootName: string, nonSelfClosingEl
             if (!isClosingTag && !isAlreadySelfClosing && nameMatch) {
                 const tagName = nameMatch[1];
                 const closingTag = `</${tagName}>`;
-                if (!isExcluded(tagName) && xml.startsWith(closingTag, end)) {
+                if (isIncluded(tagName) && xml.startsWith(closingTag, end)) {
                     output += tagText.slice(0, -1) + "/>";
                     index = end + closingTag.length;
                     continue;
@@ -173,7 +173,7 @@ const printer: Printer = {
         let sortedXML = builder.buildObject(sortedJsonObj);
 
         const rootName = Object.keys(sortedJsonObj)[0] ?? "";
-        sortedXML = collapseSelfClosingTags(sortedXML, rootName, opts.xmlNonSelfClosingElements ?? defaultNonSelfClosingElements);
+        sortedXML = collapseSelfClosingTags(sortedXML, rootName, opts.xmlSelfClosingElements ?? defaultSelfClosingElements);
 
         // add new line at the end of the file if not exist
         if (!sortedXML.endsWith("\n")) {

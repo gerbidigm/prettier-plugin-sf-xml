@@ -40,14 +40,14 @@ Salesforce's own canonical (retrieved) metadata XML only ever pins the identifie
 }
 ```
 
-### `xmlNonSelfClosingElements`
+### `xmlSelfClosingElements`
 
-Empty elements render self-closing (`<tag/>`) by default. Some Salesforce metadata schemas are quirky about specific elements being self-closing, so this option lists elements that should instead render as `<tag></tag>`. Defaults to `[]`.
+Empty elements render as `<tag></tag>` by default. Some Salesforce metadata schemas are known to expect specific elements to be self-closing, so this option lists elements that should instead render as `<tag/>`. Defaults to `[]`.
 
-Entries are either a bare element name (applies under any root metadata type) or `Root.element` to scope the exception to one root type:
+Entries are either a bare element name (applies under any root metadata type) or `Root.element` to scope it to one root type:
 
 ```json
 {
-  "xmlNonSelfClosingElements": ["Layout.layoutColumns"]
+  "xmlSelfClosingElements": ["Layout.layoutColumns"]
 }
 ```

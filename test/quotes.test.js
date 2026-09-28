@@ -11,7 +11,7 @@ test("escapes double quotes in text without changing markup", async () => {
   expect(formatted).toContain(
     "<Body>Use &quot;quoted&quot; text &amp; &lt;</Body>",
   );
-  expect(formatted).toContain("<allInternalUsers/>");
+  expect(formatted).toContain("<allInternalUsers></allInternalUsers>");
 });
 
 test("escapes apostrophes in text without changing markup", async () => {
@@ -24,5 +24,5 @@ test("escapes apostrophes in text without changing markup", async () => {
   expect(formatted).toContain(
     "<Body>Use &apos;quoted&apos; text &amp; &lt;</Body>",
   );
-  expect(formatted).toContain("<allInternalUsers/>");
+  expect(formatted).toContain("<allInternalUsers></allInternalUsers>");
 });

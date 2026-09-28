@@ -72,12 +72,12 @@ export const defaultCustomSortElements: string[] = [
     "locationY"
 ];
 
-// Elements that render as an explicit `<tag></tag>` pair instead of the
-// default self-closing `<tag/>` when empty. Entries are either a bare
-// element name (applies under any root metadata type) or `Root.element`
-// to scope the exception to a specific root type (e.g. "Layout.layoutColumns"),
-// for cases where a given metadata schema is quirky about self-closing tags.
-export const defaultNonSelfClosingElements: string[] = [];
+// Elements that render self-closing (`<tag/>`) instead of the default
+// explicit `<tag></tag>` pair when empty. Entries are either a bare element
+// name (applies under any root metadata type) or `Root.element` to scope it
+// to a specific root type (e.g. "Layout.layoutColumns"), for cases where a
+// given metadata schema is known to prefer the self-closing form.
+export const defaultSelfClosingElements: string[] = [];
 
 export const xmlParseOptions: XMLParseOptions = {
     trim: true
