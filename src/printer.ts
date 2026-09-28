@@ -68,8 +68,14 @@ const escapeTextQuotes = (xml: string): string => {
 
             output += xml.slice(index, end);
             index = end;
+        } else if (xml[index] === '"') {
+            output += "&quot;";
+            index += 1;
+        } else if (xml[index] === "'") {
+            output += "&apos;";
+            index += 1;
         } else {
-            output += xml[index] === '"' ? "&quot;" : xml[index];
+            output += xml[index];
             index += 1;
         }
     }
