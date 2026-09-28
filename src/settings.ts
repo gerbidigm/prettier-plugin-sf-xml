@@ -139,7 +139,7 @@ export const defaultCustomSortElements: string[] = [
 // self-close every empty element under that root type — Flow metadata is
 // expected to self-close uniformly, unlike other schemas where only specific
 // elements are known to prefer it.
-export const defaultSelfClosingElements: string[] = ["Flow.*", "CustomMetadata.*", "Dashboard.*"];
+export const defaultSelfClosingElements: string[] = ["Layout.layoutColumns", "Flow.*", "CustomMetadata.*", "Dashboard.*"];
 
 export const xmlParseOptions: XMLParseOptions = {
     trim: true

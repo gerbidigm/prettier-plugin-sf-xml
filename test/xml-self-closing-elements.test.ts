@@ -14,9 +14,9 @@ function format(options: Record<string, unknown> = {}) {
     return prettier.format(xml, { parser: "sf-xml-parse", plugins: [plugin as any as string], ...options });
 }
 
-test("default: nothing self-closes", async () => {
+test("default: only the plugin's known self-closing elements self-close", async () => {
     const out = await format();
-    expect(out).toContain("<layoutColumns></layoutColumns>");
+    expect(out).toContain("<layoutColumns/>");
     expect(out).toContain("<otherThing></otherThing>");
 });
 
