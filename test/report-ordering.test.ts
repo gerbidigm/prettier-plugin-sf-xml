@@ -36,23 +36,23 @@ describe("Report element ordering", () => {
 </Report>
 `;
 
-    test("loops pins label and name ahead of its other fields", async () => {
+    test("loops pins name and label ahead of its other fields", async () => {
         const formatted = await format(reportXML);
 
         expectInOrder(formatted, [
-            "<label>My Loop</label>",
             "<name>MyLoop</name>",
+            "<label>My Loop</label>",
             "<fullName>MyLoop</fullName>",
             "<apiName>Account</apiName>"
         ]);
     });
 
-    test("recordUpdates pins label and name ahead of its other fields", async () => {
+    test("recordUpdates pins name and label ahead of its other fields", async () => {
         const formatted = await format(reportXML);
 
         expectInOrder(formatted, [
-            "<label>My Update</label>",
             "<name>MyUpdate</name>",
+            "<label>My Update</label>",
             "<fullName>MyUpdate</fullName>",
             "<apiName>Account</apiName>"
         ]);
