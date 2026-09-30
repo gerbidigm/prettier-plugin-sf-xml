@@ -9,7 +9,7 @@ enum Type {
 function getType(value: any): Type {
     if (Array.isArray(value)) {
         return Type.ARRAY;
-    } else if (typeof value !== 'object') {
+    } else if (value === null || typeof value !== 'object') {
         return Type.BASIC;
     } else {
         return Type.OBJECT;
@@ -25,7 +25,7 @@ function getIdentifier(key: string, value: any, relevantKeys: SorterRelevantKeys
             return `${key}:${getIdentifierFromArray(key, value, relevantKeys)}`;
 
         case Type.OBJECT:
-            relevantKeys = relevantKeys ?? Reflect.ownKeys(value);
+            relevantKeys = relevantKeys ?? Object.keys(value);
             return `${key}:${getIdentifierFromObject(key, value, relevantKeys)}`;
 
         default:
@@ -123,7 +123,7 @@ const mySortFunction = (a: any, b: any, key: string, relevantKeys: SorterRelevan
 }
 
 function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
-    const relevantKeys: SorterRelevantKeys = sorterOptions.relevantKeys ?? [];
+    const relevantKeys: SorterRelevantKeys = sorterOptions.relevantKeys ?? {};
     const nonSortKeys: string[] = sorterOptions.nonSortKeys ?? [];
     const customSortKeys: SorterCustomKeys = sorterOptions.customSortElements ?? {};
     const keyOrderOverrides: [string, string][] = sorterOptions.keyOrderOverrides ?? [];
@@ -143,10 +143,7 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
 
         case Type.OBJECT: {
             const newObject: Record<string, any> = {};
-            const sortedKeys = Reflect.ownKeys(object).sort((a, b) => {
-                const aKey = a.toString();
-                const bKey = b.toString();
-
+            const sortedKeys = Object.keys(object).sort((aKey, bKey) => {
                 // A key-order override expresses a relative-order requirement
                 // between two specific sibling keys (e.g. Salesforce requires
                 // `targets` before `targetConfigs` in a LightningComponentBundle)
@@ -187,7 +184,7 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
                 return compareStrings(aKey, bKey);
             });
             sortedKeys.forEach((innerKey) => {
-                newObject[innerKey.toString()] = sort(object[innerKey.toString()], sorterOptions, innerKey.toString());
+                newObject[innerKey] = sort(object[innerKey], sorterOptions, innerKey);
             });
             return newObject;
         }

@@ -26,25 +26,33 @@ const getTab = function (tabWidth: number, useTabs: boolean): string {
     return tab;
 }
 
-const escapeTextQuotes = (xml: string): string => {
-    let output = "";
+// A single lexical unit of an XML document: a comment, a CDATA section, a
+// processing instruction, a tag (opening, closing, or self-closing), or a run
+// of plain text between tags. Shared by escapeTextQuotes and
+// collapseSelfClosingTags so the tag/comment/CDATA/PI boundary-scanning logic
+// (including bracket-depth tracking for internal DTD subsets and quoted
+// attribute values) only has to be gotten right in one place.
+type XmlToken = { type: "comment" | "cdata" | "pi" | "tag" | "text"; text: string };
+
+const tokenizeXml = (xml: string): XmlToken[] => {
+    const tokens: XmlToken[] = [];
     let index = 0;
 
     while (index < xml.length) {
         if (xml.startsWith("<!--", index)) {
             const end = xml.indexOf("-->", index + 4);
             const next = end < 0 ? xml.length : end + 3;
-            output += xml.slice(index, next);
+            tokens.push({ type: "comment", text: xml.slice(index, next) });
             index = next;
         } else if (xml.startsWith("<![CDATA[", index)) {
             const end = xml.indexOf("]]>", index + 9);
             const next = end < 0 ? xml.length : end + 3;
-            output += xml.slice(index, next);
+            tokens.push({ type: "cdata", text: xml.slice(index, next) });
             index = next;
         } else if (xml.startsWith("<?", index)) {
             const end = xml.indexOf("?>", index + 2);
             const next = end < 0 ? xml.length : end + 2;
-            output += xml.slice(index, next);
+            tokens.push({ type: "pi", text: xml.slice(index, next) });
             index = next;
         } else if (xml[index] === "<") {
             let quote: string | null = null;
@@ -67,22 +75,23 @@ const escapeTextQuotes = (xml: string): string => {
                 }
             }
 
-            output += xml.slice(index, end);
+            tokens.push({ type: "tag", text: xml.slice(index, end) });
             index = end;
-        } else if (xml[index] === '"') {
-            output += "&quot;";
-            index += 1;
-        } else if (xml[index] === "'") {
-            output += "&apos;";
-            index += 1;
         } else {
-            output += xml[index];
-            index += 1;
+            let end = index;
+            while (end < xml.length && xml[end] !== "<") end += 1;
+            tokens.push({ type: "text", text: xml.slice(index, end) });
+            index = end;
         }
     }
 
-    return output;
+    return tokens;
 };
+
+const escapeTextQuotes = (xml: string): string =>
+    tokenizeXml(xml)
+        .map((token) => (token.type === "text" ? token.text.replace(/"/g, "&quot;").replace(/'/g, "&apos;") : token.text))
+        .join("");
 
 // xml2js's builder always renders empty elements as an explicit `<tag></tag>`
 // pair (see xmlBuilderOptions.renderOpts.allowEmpty). That's the right default
@@ -96,67 +105,38 @@ const collapseSelfClosingTags = (xml: string, rootName: string, selfClosingEleme
     const isIncluded = (tagName: string): boolean =>
         included.has(tagName) || included.has(`${rootName}.${tagName}`) || included.has(`${rootName}.*`);
 
+    const tokens = tokenizeXml(xml);
     let output = "";
-    let index = 0;
+    let i = 0;
 
-    while (index < xml.length) {
-        if (xml.startsWith("<!--", index)) {
-            const end = xml.indexOf("-->", index + 4);
-            const next = end < 0 ? xml.length : end + 3;
-            output += xml.slice(index, next);
-            index = next;
-        } else if (xml.startsWith("<![CDATA[", index)) {
-            const end = xml.indexOf("]]>", index + 9);
-            const next = end < 0 ? xml.length : end + 3;
-            output += xml.slice(index, next);
-            index = next;
-        } else if (xml.startsWith("<?", index)) {
-            const end = xml.indexOf("?>", index + 2);
-            const next = end < 0 ? xml.length : end + 2;
-            output += xml.slice(index, next);
-            index = next;
-        } else if (xml[index] === "<") {
-            let quote: string | null = null;
-            let bracketDepth = 0;
-            let end = index + 1;
+    while (i < tokens.length) {
+        const token = tokens[i];
 
-            for (; end < xml.length; end += 1) {
-                const char = xml[end];
-                if (quote) {
-                    if (char === quote) quote = null;
-                } else if (char === '"' || char === "'") {
-                    quote = char;
-                } else if (char === "[") {
-                    bracketDepth += 1;
-                } else if (char === "]") {
-                    bracketDepth = Math.max(0, bracketDepth - 1);
-                } else if (char === ">" && bracketDepth === 0) {
-                    end += 1;
-                    break;
-                }
-            }
-
-            const tagText = xml.slice(index, end);
-            const nameMatch = tagText.match(/^<([\w:.-]+)/);
-            const isClosingTag = tagText.startsWith("</");
-            const isAlreadySelfClosing = /\/>$/.test(tagText);
-
-            if (!isClosingTag && !isAlreadySelfClosing && nameMatch) {
-                const tagName = nameMatch[1];
-                const closingTag = `</${tagName}>`;
-                if (isIncluded(tagName) && xml.startsWith(closingTag, end)) {
-                    output += tagText.slice(0, -1) + "/>";
-                    index = end + closingTag.length;
-                    continue;
-                }
-            }
-
-            output += tagText;
-            index = end;
-        } else {
-            output += xml[index];
-            index += 1;
+        if (token.type !== "tag") {
+            output += token.text;
+            i += 1;
+            continue;
         }
+
+        const tagText = token.text;
+        const nameMatch = tagText.match(/^<([\w:.-]+)/);
+        const isClosingTag = tagText.startsWith("</");
+        const isAlreadySelfClosing = /\/>$/.test(tagText);
+
+        if (!isClosingTag && !isAlreadySelfClosing && nameMatch) {
+            const tagName = nameMatch[1];
+            const closingTag = `</${tagName}>`;
+            const next = tokens[i + 1];
+
+            if (isIncluded(tagName) && next?.type === "tag" && next.text === closingTag) {
+                output += tagText.slice(0, -1) + "/>";
+                i += 2;
+                continue;
+            }
+        }
+
+        output += tagText;
+        i += 1;
     }
 
     return output;
@@ -170,7 +150,7 @@ const printer: Printer = {
             ...sorterOptions,
             customSortElements: buildCustomSortElements(opts.xmlCustomSortElements ?? defaultCustomSortElements)
         };
-        const sortedJsonObj = sort(path.getValue().parsedXML, runtimeSorterOptions, null);
+        const sortedJsonObj = sort(path.getValue().parsedXML, runtimeSorterOptions, undefined);
         let sortedXML = builder.buildObject(sortedJsonObj);
 
         const rootName = Object.keys(sortedJsonObj)[0] ?? "";
