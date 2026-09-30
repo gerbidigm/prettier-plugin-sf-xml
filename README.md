@@ -4,6 +4,13 @@
 
 This plugin uses a modified version of the [swagup-com/sf-xml-formatter](https://github.com/swagup-com/sf-xml-formatter) xml file sorting algorithm with new features to adapt to the original Salesforce files such as respecting the tag order and add custom indentation through the prettier tabWidth and useTab options.
 
+## Features
+
+- **Salesforce-aware sorting** — sibling elements sort to match how Salesforce's own Metadata API serializes retrieved files (alphabetical by default, with pinned identifier fields and metadata-type-specific exceptions such as Flow canvas elements and Report groupings) instead of plain alphabetical order.
+- **Comment preservation** — XML comments, including ones that are an element's entire content (e.g. translation-file placeholders like `<label><!-- Some Label --></label>`), survive formatting instead of being dropped.
+- **Configurable self-closing elements** — opt specific elements into `<tag/>` instead of the default `<tag></tag>` for empty elements, globally or scoped to a root metadata type.
+- **Standard Prettier indentation** — honors the standard `tabWidth` and `useTabs` options.
+
 ## Getting started
 
 To run `prettier` with the Salesforce Metadata XML plugin, you're going to need [`node`](https://nodejs.org/en/download/).
@@ -44,12 +51,24 @@ Salesforce's own canonical (retrieved) metadata XML only ever pins the identifie
 
 ### `xmlSelfClosingElements`
 
-Empty elements render as `<tag></tag>` by default. Some Salesforce metadata schemas are known to expect specific elements to be self-closing, so this option lists elements that should instead render as `<tag/>`. Defaults to `[]`.
+Empty elements render as `<tag></tag>` by default. Some Salesforce metadata schemas are known to expect specific elements to be self-closing, so this option lists elements that should instead render as `<tag/>`.
 
-Entries are either a bare element name (applies under any root metadata type) or `Root.element` to scope it to one root type:
+Entries are either a bare element name (applies under any root metadata type), `Root.element` to scope it to one root type, or `Root.*` to self-close every empty element under that root type:
 
 ```json
 {
   "xmlSelfClosingElements": ["Layout.layoutColumns"]
 }
 ```
+
+Defaults to `["Layout.layoutColumns", "Flow.*", "CustomMetadata.*", "Dashboard.*", "QuickAction.*"]`.
+
+## Development
+
+```bash
+npm install
+npm test    # run the Jest test suite
+npm run lint
+```
+
+Formatting behavior is covered by snapshot tests in `test/`; when you change sorting or rendering rules, update the fixtures there and review the resulting snapshot diffs. See [CHANGELOG.md](CHANGELOG.md) for a history of formatting changes.
