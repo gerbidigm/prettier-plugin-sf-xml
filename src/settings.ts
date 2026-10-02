@@ -74,9 +74,14 @@ export const sorterOptions: SorterOptions = {
         version: ["number"],
         rules: ["fullName"]
     },
+    // Keys whose subtree keeps its original order. Entries are either a bare
+    // element name or `Container.element` to scope it to elements nested
+    // directly under a specific container key (e.g. "CustomApplication.tabs",
+    // where the order is the app's navigation order).
     nonSortKeys: [
         "assignmentRule",
         "columns",
+        "CustomApplication.tabs",
         "FlexiPage",
         "GlobalValueSet",
         "groupingsDown",

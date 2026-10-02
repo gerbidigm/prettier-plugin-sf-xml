@@ -49,6 +49,37 @@ test("elements under nonSortKeys keep their original order", () => {
     expect(result.nonSorted.map((item: any) => item.fullName[0])).toEqual(["Zulu", "Alpha"]);
 });
 
+test("container-scoped nonSortKeys only preserve order under that container", () => {
+    const options: SorterOptions = {
+        nonSortKeys: ["CustomApplication.tabs"]
+    };
+    const input = {
+        CustomApplication: {
+            tabs: ["Zulu__c", "standard-Account", "Alpha__c"]
+        },
+        Other: {
+            tabs: ["Zulu__c", "standard-Account", "Alpha__c"]
+        }
+    };
+
+    const result = sort(input, options);
+
+    expect(result.CustomApplication.tabs).toEqual(["Zulu__c", "standard-Account", "Alpha__c"]);
+    expect(result.Other.tabs).toEqual(["Alpha__c", "Zulu__c", "standard-Account"]);
+});
+
+test("default settings preserve CustomApplication tab order", () => {
+    const input = {
+        CustomApplication: {
+            tabs: ["standard-home", "Zulu__c", "Alpha__c"]
+        }
+    };
+
+    const result = sort(input, sorterOptions);
+
+    expect(result.CustomApplication.tabs).toEqual(["standard-home", "Zulu__c", "Alpha__c"]);
+});
+
 test("repeated child arrays still sort by their relevant key", () => {
     const options: SorterOptions = {
         ...baseOptions,

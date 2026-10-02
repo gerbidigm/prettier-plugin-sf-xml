@@ -11,7 +11,7 @@ function getType(value) {
     if (Array.isArray(value)) {
         return Type.ARRAY;
     }
-    else if (typeof value !== 'object') {
+    else if (value === null || typeof value !== 'object') {
         return Type.BASIC;
     }
     else {
@@ -25,7 +25,7 @@ function getIdentifier(key, value, relevantKeys) {
         case Type.ARRAY:
             return `${key}:${getIdentifierFromArray(key, value, relevantKeys)}`;
         case Type.OBJECT:
-            relevantKeys = relevantKeys !== null && relevantKeys !== void 0 ? relevantKeys : Reflect.ownKeys(value);
+            relevantKeys = relevantKeys !== null && relevantKeys !== void 0 ? relevantKeys : Object.keys(value);
             return `${key}:${getIdentifierFromObject(key, value, relevantKeys)}`;
         default:
             throw new Error(`Unsupported type: ${typeof value}`);
@@ -74,6 +74,17 @@ function isSortLast(sortLastKeys, containerKey, childKey) {
     }
     return sortLastKeys.includes(childKey);
 }
+// Looks up whether a child key's subtree should keep its original order,
+// preferring a container-scoped entry (e.g. "CustomApplication.tabs") over a
+// bare, unscoped one — same scoping as isSortLast, so a key name that only
+// needs its order preserved under one metadata type doesn't freeze it
+// everywhere else.
+function isNonSortKey(nonSortKeys, containerKey, childKey) {
+    if (containerKey !== undefined && nonSortKeys.includes(`${containerKey}.${childKey}`)) {
+        return true;
+    }
+    return nonSortKeys.includes(childKey);
+}
 // Looks up a child key's pin priority, preferring an entry scoped to the
 // immediate container key (e.g. "actionCalls.description") over a bare,
 // unscoped entry (e.g. "fullName"). Container-scoped entries let the same
@@ -110,7 +121,7 @@ const mySortFunction = (a, b, key, relevantKeys, valuePriority) => {
 };
 function sort(object, sorterOptions, key) {
     var _a, _b, _c, _d, _e, _f;
-    const relevantKeys = (_a = sorterOptions.relevantKeys) !== null && _a !== void 0 ? _a : [];
+    const relevantKeys = (_a = sorterOptions.relevantKeys) !== null && _a !== void 0 ? _a : {};
     const nonSortKeys = (_b = sorterOptions.nonSortKeys) !== null && _b !== void 0 ? _b : [];
     const customSortKeys = (_c = sorterOptions.customSortElements) !== null && _c !== void 0 ? _c : {};
     const keyOrderOverrides = (_d = sorterOptions.keyOrderOverrides) !== null && _d !== void 0 ? _d : [];
@@ -126,9 +137,7 @@ function sort(object, sorterOptions, key) {
             return object.map((item) => sort(item, sorterOptions, key)).sort((a, b) => mySortFunction(a, b, key, relevantKeys, valuePriority));
         case Type.OBJECT: {
             const newObject = {};
-            const sortedKeys = Reflect.ownKeys(object).sort((a, b) => {
-                const aKey = a.toString();
-                const bKey = b.toString();
+            const sortedKeys = Object.keys(object).sort((aKey, bKey) => {
                 // A key-order override expresses a relative-order requirement
                 // between two specific sibling keys (e.g. Salesforce requires
                 // `targets` before `targetConfigs` in a LightningComponentBundle)
@@ -165,7 +174,11 @@ function sort(object, sorterOptions, key) {
                 return compareStrings(aKey, bKey);
             });
             sortedKeys.forEach((innerKey) => {
-                newObject[innerKey.toString()] = sort(object[innerKey.toString()], sorterOptions, innerKey.toString());
+                if (isNonSortKey(nonSortKeys, key, innerKey)) {
+                    newObject[innerKey] = object[innerKey];
+                    return;
+                }
+                newObject[innerKey] = sort(object[innerKey], sorterOptions, innerKey);
             });
             return newObject;
         }

@@ -83,6 +83,18 @@ function isSortLast(sortLastKeys: string[], containerKey: string | undefined, ch
     return sortLastKeys.includes(childKey);
 }
 
+// Looks up whether a child key's subtree should keep its original order,
+// preferring a container-scoped entry (e.g. "CustomApplication.tabs") over a
+// bare, unscoped one — same scoping as isSortLast, so a key name that only
+// needs its order preserved under one metadata type doesn't freeze it
+// everywhere else.
+function isNonSortKey(nonSortKeys: string[], containerKey: string | undefined, childKey: string): boolean {
+    if (containerKey !== undefined && nonSortKeys.includes(`${containerKey}.${childKey}`)) {
+        return true;
+    }
+    return nonSortKeys.includes(childKey);
+}
+
 // Looks up a child key's pin priority, preferring an entry scoped to the
 // immediate container key (e.g. "actionCalls.description") over a bare,
 // unscoped entry (e.g. "fullName"). Container-scoped entries let the same
@@ -184,6 +196,10 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
                 return compareStrings(aKey, bKey);
             });
             sortedKeys.forEach((innerKey) => {
+                if (isNonSortKey(nonSortKeys, key, innerKey)) {
+                    newObject[innerKey] = object[innerKey];
+                    return;
+                }
                 newObject[innerKey] = sort(object[innerKey], sorterOptions, innerKey);
             });
             return newObject;
