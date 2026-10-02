@@ -30,7 +30,7 @@ const flowNameLabelFieldOrder = ["name", "label"];
 // elements (xmlns, then xmlns:xsi, then xmlns:xsd, whichever are present)
 // need that exact order — alphabetical sorting flips xsi/xsd since "d" <
 // "i" — so this pins them the same way any other element's children are
-// pinned, scoped to the "$" attribute container.
+// pinned, with a root attribute selector ("/*/@xmlns").
 const xmlAttributeOrder = ["xmlns", "xmlns:xsi", "xmlns:xsd"];
 exports.sorterOptions = {
     relevantKeys: {
@@ -70,25 +70,25 @@ exports.sorterOptions = {
         version: ["number"],
         rules: ["fullName"]
     },
-    // Keys whose subtree keeps its original order. Entries are either a bare
-    // element name or `Container.element` to scope it to elements nested
-    // directly under a specific container key (e.g. "CustomApplication.tabs",
-    // where the order is the app's navigation order).
+    // Selectors (see selector.ts) for elements whose whole subtree keeps its
+    // original order. Root selectors like "/Layout" leave an entire metadata
+    // type unsorted; "/CustomApplication/tabs" preserves the app's
+    // navigation order.
     nonSortKeys: [
         "assignmentRule",
         "columns",
-        "CustomApplication.tabs",
-        "FlexiPage",
-        "GlobalValueSet",
+        "/CustomApplication/tabs",
+        "/FlexiPage",
+        "/GlobalValueSet",
         "groupingsDown",
-        "Layout",
+        "/Layout",
         "lookupFilter",
         "pathAssistantSteps",
         "picklistValues",
         "profileSearchLayouts",
         "quickActionLayout",
         "sections",
-        "StandardValueSet",
+        "/StandardValueSet",
         "valueSetDefinition"
     ],
     // Alphabetical order gets these pairs wrong: Salesforce requires the
@@ -98,10 +98,11 @@ exports.sorterOptions = {
     keyOrderOverrides: [
         ["targets", "targetConfigs"]
     ],
-    // Keys that always sort after every other sibling in their container,
-    // pinned or not — the opposite end from customSortElements.
+    // Selectors for elements that always sort after every other sibling in
+    // their container, pinned or not — the opposite end from
+    // customSortElements.
     sortLastKeys: [
-        "actionOverrides.pageOrSobjectType"
+        "actionOverrides/pageOrSobjectType"
     ],
     // Basic-value arrays where Salesforce expects a specific order instead
     // of alphabetical (e.g. CustomApplication's formFactors: alphabetical
@@ -112,33 +113,32 @@ exports.sorterOptions = {
 };
 // The default priority order for elements that should be pinned ahead of
 // their alphabetically-sorted siblings, used when the consumer doesn't
-// override `xmlCustomSortElements`. Entries are either a bare element name
-// (pinned wherever it appears) or `Container.element` to scope the pin to
-// elements nested directly under a specific container key (e.g.
-// "actionCalls.description"), since the same field name can need different
+// override `xmlCustomSortElements`. Entries are selectors (see selector.ts):
+// a bare element name pins it wherever it appears, and `container/element`
+// scopes the pin to elements directly under that container (e.g.
+// "actionCalls/description"), since the same field name can need different
 // treatment depending on what it's nested under — see flowCanvasElements
 // and flowNestedNameOnlyElements above. Outside of Flow, Salesforce's own
 // canonical (retrieved) XML only ever pins the identifier element first, so
 // anything past `fullName` here is a readability preference, not a
 // canonicalization requirement, and can be overridden per-project.
 exports.defaultCustomSortElements = [
-    ...xmlAttributeOrder.map((attr) => `$.${attr}`),
-    ...flowCanvasElements.flatMap((element) => flowCanvasFieldOrder.map((field) => `${element}.${field}`)),
-    ...flowNestedNameOnlyElements.map((element) => `${element}.name`),
-    ...reportLabelNameElements.flatMap((element) => reportLabelNameFieldOrder.map((field) => `${element}.${field}`)),
-    ...flowNameLabelElements.flatMap((element) => flowNameLabelFieldOrder.map((field) => `${element}.${field}`)),
+    ...xmlAttributeOrder.map((attr) => `/*/@${attr}`),
+    ...flowCanvasElements.flatMap((element) => flowCanvasFieldOrder.map((field) => `${element}/${field}`)),
+    ...flowNestedNameOnlyElements.map((element) => `${element}/name`),
+    ...reportLabelNameElements.flatMap((element) => reportLabelNameFieldOrder.map((field) => `${element}/${field}`)),
+    ...flowNameLabelElements.flatMap((element) => flowNameLabelFieldOrder.map((field) => `${element}/${field}`)),
     "fullName",
     "locationX",
     "locationY"
 ];
-// Elements that render self-closing (`<tag/>`) instead of the default
-// explicit `<tag></tag>` pair when empty. Entries are either a bare element
-// name (applies under any root metadata type), `Root.element` to scope it
-// to a specific root type (e.g. "Layout.layoutColumns"), or `Root.*` to
-// self-close every empty element under that root type — Flow metadata is
-// expected to self-close uniformly, unlike other schemas where only specific
-// elements are known to prefer it.
-exports.defaultSelfClosingElements = ["Layout.layoutColumns", "Flow.*", "CustomMetadata.*", "Dashboard.*", "QuickAction.*"];
+// Selectors (see selector.ts) for elements that render self-closing
+// (`<tag/>`) instead of the default explicit `<tag></tag>` pair when empty,
+// e.g. "/Layout//layoutColumns" for one element under one root type, or
+// "/Flow//*" to self-close every empty element under that root type — Flow
+// metadata is expected to self-close uniformly, unlike other schemas where
+// only specific elements are known to prefer it.
+exports.defaultSelfClosingElements = ["/Layout//layoutColumns", "/Flow//*", "/CustomMetadata//*", "/Dashboard//*", "/QuickAction//*"];
 exports.xmlParseOptions = {
     trim: true
 };

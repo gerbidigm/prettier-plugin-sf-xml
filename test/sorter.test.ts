@@ -4,11 +4,7 @@ import type { SorterOptions } from "../src/types";
 
 const baseOptions: SorterOptions = {
     nonSortKeys: ["nonSorted"],
-    customSortElements: {
-        name: 1,
-        fullName: 2,
-        label: 3
-    }
+    customSortElements: ["name", "fullName", "label"]
 };
 
 test("unconfigured siblings sort alphabetically", () => {
@@ -51,7 +47,7 @@ test("elements under nonSortKeys keep their original order", () => {
 
 test("container-scoped nonSortKeys only preserve order under that container", () => {
     const options: SorterOptions = {
-        nonSortKeys: ["CustomApplication.tabs"]
+        nonSortKeys: ["/CustomApplication/tabs"]
     };
     const input = {
         CustomApplication: {
@@ -78,6 +74,60 @@ test("default settings preserve CustomApplication tab order", () => {
     const result = sort(input, sorterOptions);
 
     expect(result.CustomApplication.tabs).toEqual(["standard-home", "Zulu__c", "Alpha__c"]);
+});
+
+test("container-scoped customSortElements beat bare ones and only apply under that container", () => {
+    const options: SorterOptions = {
+        customSortElements: ["fullName", "actionCalls/label", "actionCalls/name"]
+    };
+    const input = {
+        Flow: {
+            actionCalls: [{ name: ["A"], fullName: ["F"], label: ["L"], actionName: ["X"] }],
+            other: [{ name: ["A"], fullName: ["F"], label: ["L"], actionName: ["X"] }]
+        }
+    };
+
+    const result = sort(input, options);
+
+    expect(Object.keys(result.Flow.actionCalls[0])).toEqual(["fullName", "label", "name", "actionName"]);
+    expect(Object.keys(result.Flow.other[0])).toEqual(["fullName", "actionName", "label", "name"]);
+});
+
+test("root selectors in nonSortKeys leave a whole metadata type unsorted", () => {
+    const input = {
+        Layout: { zulu: ["1"], alpha: ["2"] }
+    };
+
+    const result = sort(input, { nonSortKeys: ["/Layout"] });
+
+    expect(Object.keys(result.Layout)).toEqual(["zulu", "alpha"]);
+});
+
+test("root attribute selectors pin attributes on the root element only", () => {
+    const input = {
+        CustomMetadata: {
+            $: { "xmlns:xsi": "i", "xmlns": "n" },
+            child: [{ $: { "xmlns:xsi": "i", "xmlns": "n" } }]
+        }
+    };
+
+    const result = sort(input, { customSortElements: ["/*/@xmlns"] });
+
+    expect(Object.keys(result.CustomMetadata.$)).toEqual(["xmlns", "xmlns:xsi"]);
+    expect(Object.keys(result.CustomMetadata.child[0].$)).toEqual(["xmlns", "xmlns:xsi"].sort());
+});
+
+test("legacy dot-scoped customSortElements still work, with a deprecation warning", () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const input = {
+        actionCalls: [{ name: ["A"], actionName: ["X"] }]
+    };
+
+    const result = sort(input, { customSortElements: ["legacyCalls.name", "actionCalls.name"] }, "Flow");
+
+    expect(Object.keys(result.actionCalls[0])).toEqual(["name", "actionName"]);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"actionCalls/name"'));
+    warn.mockRestore();
 });
 
 test("repeated child arrays still sort by their relevant key", () => {

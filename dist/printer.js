@@ -27,13 +27,7 @@ const xml2js = __importStar(require("xml2js"));
 const settings_js_1 = require("./settings.js");
 const sorter_js_1 = require("./sorter.js");
 const commentPreservation_js_1 = require("./commentPreservation.js");
-const buildCustomSortElements = (elements) => {
-    const customSortElements = {};
-    elements.forEach((key, index) => {
-        customSortElements[key] = index + 1;
-    });
-    return customSortElements;
-};
+const selector_js_1 = require("./selector.js");
 const getTab = function (tabWidth, useTabs) {
     let tab = "";
     for (let i = 0; i < tabWidth; i++) {
@@ -113,11 +107,12 @@ const escapeTextQuotes = (xml) => tokenizeXml(xml)
 // for Salesforce metadata, but some elements are known to be expected
 // self-closing for a given schema, so this collapses an empty-element pair to
 // `<tag/>` only for the elements the consumer has opted in via
-// `xmlSelfClosingElements` (either a bare tag name, `Root.tag` to scope it to
-// one root metadata type, or `Root.*` to match every tag under that root).
-const collapseSelfClosingTags = (xml, rootName, selfClosingElements) => {
-    const included = new Set(selfClosingElements);
-    const isIncluded = (tagName) => included.has(tagName) || included.has(`${rootName}.${tagName}`) || included.has(`${rootName}.*`);
+// `xmlSelfClosingElements` selectors (e.g. "/Layout//layoutColumns", or
+// "/Flow//*" to match every element under that root). Open tags are tracked
+// as a stack so each candidate is matched against its full path.
+const collapseSelfClosingTags = (xml, selfClosingElements) => {
+    const selectors = (0, selector_js_1.compileSelectors)(selfClosingElements, "root");
+    const openTags = [];
     const tokens = tokenizeXml(xml);
     let output = "";
     let i = 0;
@@ -136,11 +131,15 @@ const collapseSelfClosingTags = (xml, rootName, selfClosingElements) => {
             const tagName = nameMatch[1];
             const closingTag = `</${tagName}>`;
             const next = tokens[i + 1];
-            if (isIncluded(tagName) && (next === null || next === void 0 ? void 0 : next.type) === "tag" && next.text === closingTag) {
+            if ((next === null || next === void 0 ? void 0 : next.type) === "tag" && next.text === closingTag && (0, selector_js_1.findBestMatch)(selectors, [...openTags, tagName]) !== undefined) {
                 output += tagText.slice(0, -1) + "/>";
                 i += 2;
                 continue;
             }
+            openTags.push(tagName);
+        }
+        else if (isClosingTag) {
+            openTags.pop();
         }
         output += tagText;
         i += 1;
@@ -149,17 +148,16 @@ const collapseSelfClosingTags = (xml, rootName, selfClosingElements) => {
 };
 const printer = {
     print(path, opts, print) {
-        var _a, _b, _c;
+        var _a, _b;
         settings_js_1.xmlBuilderOptions.renderOpts.indent = getTab(opts.tabWidth, opts.useTabs);
         const builder = new xml2js.Builder(settings_js_1.xmlBuilderOptions);
         const runtimeSorterOptions = {
             ...settings_js_1.sorterOptions,
-            customSortElements: buildCustomSortElements((_a = opts.xmlCustomSortElements) !== null && _a !== void 0 ? _a : settings_js_1.defaultCustomSortElements)
+            customSortElements: (_a = opts.xmlCustomSortElements) !== null && _a !== void 0 ? _a : settings_js_1.defaultCustomSortElements
         };
         const sortedJsonObj = (0, sorter_js_1.sort)(path.getValue().parsedXML, runtimeSorterOptions, undefined);
         let sortedXML = builder.buildObject(sortedJsonObj);
-        const rootName = (_b = Object.keys(sortedJsonObj)[0]) !== null && _b !== void 0 ? _b : "";
-        sortedXML = collapseSelfClosingTags(sortedXML, rootName, (_c = opts.xmlSelfClosingElements) !== null && _c !== void 0 ? _c : settings_js_1.defaultSelfClosingElements);
+        sortedXML = collapseSelfClosingTags(sortedXML, (_b = opts.xmlSelfClosingElements) !== null && _b !== void 0 ? _b : settings_js_1.defaultSelfClosingElements);
         // add new line at the end of the file if not exist
         if (!sortedXML.endsWith("\n")) {
             sortedXML += "\n";

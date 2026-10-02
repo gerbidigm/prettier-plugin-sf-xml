@@ -1,4 +1,6 @@
-import type { SorterOptions, SorterRelevantKeys, SorterCustomKeys } from "./types";
+import type { SorterOptions, SorterRelevantKeys } from "./types";
+import { compileSelectors, findBestMatch } from "./selector.js";
+import type { NodePath, Selector } from "./selector.js";
 
 enum Type {
     BASIC = 'basic',
@@ -72,45 +74,31 @@ function getValuePriority(valuePriority: { [containerKey: string]: string[] }, c
     return index === -1 ? undefined : index;
 }
 
-// Looks up whether a child key should sort after every other sibling key,
-// pinned or not (e.g. actionOverrides.pageOrSobjectType), preferring a
-// container-scoped entry over a bare, unscoped one — mirrors
-// getCustomSortPriority's scoping but for the opposite end of the order.
-function isSortLast(sortLastKeys: string[], containerKey: string | undefined, childKey: string): boolean {
-    if (containerKey !== undefined && sortLastKeys.includes(`${containerKey}.${childKey}`)) {
-        return true;
+// xml2js keeps an element's attributes under "$" and its text under "_"
+// (when it also has attributes); neither is an element, so selectors only
+// see them as an attribute path segment ("@name") or not at all.
+const ATTRIBUTES_KEY = "$";
+const TEXT_KEY = "_";
+
+function childPath(path: NodePath, containerKey: string | undefined, childKey: string): NodePath {
+    if (containerKey === ATTRIBUTES_KEY) {
+        return [...path.slice(0, -1), `@${childKey}`];
     }
-    return sortLastKeys.includes(childKey);
+    return [...path, childKey];
 }
 
-// Looks up whether a child key's subtree should keep its original order,
-// preferring a container-scoped entry (e.g. "CustomApplication.tabs") over a
-// bare, unscoped one — same scoping as isSortLast, so a key name that only
-// needs its order preserved under one metadata type doesn't freeze it
-// everywhere else.
-function isNonSortKey(nonSortKeys: string[], containerKey: string | undefined, childKey: string): boolean {
-    if (containerKey !== undefined && nonSortKeys.includes(`${containerKey}.${childKey}`)) {
-        return true;
-    }
-    return nonSortKeys.includes(childKey);
+function isSelectable(key: string | undefined): boolean {
+    return key !== undefined && key !== ATTRIBUTES_KEY && key !== TEXT_KEY;
 }
 
-// Looks up a child key's pin priority, preferring an entry scoped to the
-// immediate container key (e.g. "actionCalls.description") over a bare,
-// unscoped entry (e.g. "fullName"). Container-scoped entries let the same
-// child key name (like "name" or "label") get pinned differently depending
-// on which element it appears under — Salesforce's Flow metadata pins
-// description/name/label/locationX/locationY on canvas elements like
-// actionCalls, but only pins name on nested structures like rules or fields.
-function getCustomSortPriority(customSortKeys: SorterCustomKeys, containerKey: string | undefined, childKey: string): number | undefined {
-    if (containerKey !== undefined) {
-        const scopedPriority = customSortKeys[`${containerKey}.${childKey}`];
-        if (scopedPriority !== undefined) {
-            return scopedPriority;
-        }
-    }
-    return customSortKeys[childKey];
-}
+type CompiledSorterOptions = {
+    relevantKeys: SorterRelevantKeys;
+    nonSortKeys: Selector[];
+    customSortElements: Selector[];
+    keyOrderOverrides: [string, string][];
+    sortLastKeys: Selector[];
+    valuePriority: { [containerKey: string]: string[] };
+};
 
 const mySortFunction = (a: any, b: any, key: string, relevantKeys: SorterRelevantKeys, valuePriority: { [containerKey: string]: string[] }): number => {
     if (getType(a) === Type.BASIC && getType(b) === Type.BASIC) {
@@ -134,27 +122,36 @@ const mySortFunction = (a: any, b: any, key: string, relevantKeys: SorterRelevan
     return compareStrings(aIdentifier, bIdentifier);
 }
 
-function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
-    const relevantKeys: SorterRelevantKeys = sorterOptions.relevantKeys ?? {};
-    const nonSortKeys: string[] = sorterOptions.nonSortKeys ?? [];
-    const customSortKeys: SorterCustomKeys = sorterOptions.customSortElements ?? {};
-    const keyOrderOverrides: [string, string][] = sorterOptions.keyOrderOverrides ?? [];
-    const sortLastKeys: string[] = sorterOptions.sortLastKeys ?? [];
-    const valuePriority: { [containerKey: string]: string[] } = sorterOptions.valuePriority ?? {};
-
-    if (nonSortKeys.includes(key)) {
-        return object;
-    }
+function sortNode(object: any, options: CompiledSorterOptions, key: string | undefined, path: NodePath): any {
+    const { relevantKeys, keyOrderOverrides, valuePriority } = options;
 
     switch (getType(object)) {
         case Type.BASIC:
             return object;
 
         case Type.ARRAY:
-            return object.map((item) => sort(item, sorterOptions, key)).sort((a, b) => mySortFunction(a, b, key!, relevantKeys, valuePriority));
+            return object.map((item) => sortNode(item, options, key, path)).sort((a, b) => mySortFunction(a, b, key!, relevantKeys, valuePriority));
 
         case Type.OBJECT: {
             const newObject: Record<string, any> = {};
+            const paths = new Map<string, NodePath>();
+            const pathOf = (innerKey: string): NodePath => {
+                let innerPath = paths.get(innerKey);
+                if (innerPath === undefined) {
+                    innerPath = childPath(path, key, innerKey);
+                    paths.set(innerKey, innerPath);
+                }
+                return innerPath;
+            };
+            // A sort-last key (e.g. actionOverrides/pageOrSobjectType)
+            // always sorts after every other sibling, pinned or not — the
+            // opposite end from customSortElements. Pinned keys sort by the
+            // position of the most specific selector that matches them.
+            const sortsLast = (innerKey: string): boolean =>
+                isSelectable(innerKey) && findBestMatch(options.sortLastKeys, pathOf(innerKey)) !== undefined;
+            const pinPriority = (innerKey: string): number | undefined =>
+                isSelectable(innerKey) ? findBestMatch(options.customSortElements, pathOf(innerKey)) : undefined;
+
             const sortedKeys = Object.keys(object).sort((aKey, bKey) => {
                 // A key-order override expresses a relative-order requirement
                 // between two specific sibling keys (e.g. Salesforce requires
@@ -170,19 +167,15 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
                     }
                 }
 
-                // A sort-last key (e.g. actionOverrides.pageOrSobjectType)
-                // always sorts after every other sibling, pinned or not —
-                // the opposite end from customSortElements, so it's checked
-                // before any pin priority can put it back ahead.
-                const aSortsLast = isSortLast(sortLastKeys, key, aKey);
-                const bSortsLast = isSortLast(sortLastKeys, key, bKey);
+                const aSortsLast = sortsLast(aKey);
+                const bSortsLast = sortsLast(bKey);
 
                 if (aSortsLast !== bSortsLast) {
                     return aSortsLast ? 1 : -1;
                 }
 
-                const aPriority = getCustomSortPriority(customSortKeys, key, aKey);
-                const bPriority = getCustomSortPriority(customSortKeys, key, bKey);
+                const aPriority = pinPriority(aKey);
+                const bPriority = pinPriority(bKey);
 
                 if (aPriority !== undefined && bPriority !== undefined) {
                     return aPriority - bPriority;
@@ -196,11 +189,12 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
                 return compareStrings(aKey, bKey);
             });
             sortedKeys.forEach((innerKey) => {
-                if (isNonSortKey(nonSortKeys, key, innerKey)) {
+                // A non-sort key's whole subtree keeps its original order.
+                if (isSelectable(innerKey) && findBestMatch(options.nonSortKeys, pathOf(innerKey)) !== undefined) {
                     newObject[innerKey] = object[innerKey];
                     return;
                 }
-                newObject[innerKey] = sort(object[innerKey], sorterOptions, innerKey);
+                newObject[innerKey] = sortNode(object[innerKey], options, innerKey, pathOf(innerKey));
             });
             return newObject;
         }
@@ -208,6 +202,27 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
         default:
             throw new Error(`Unsupported type: ${typeof object}`);
     }
+}
+
+// Sorts a parsed xml2js document. `key` names the element `object` is the
+// content of, for sorting a fragment (e.g. sort(content, options, "Flow"));
+// omit it when sorting a whole document, whose single top-level key is the
+// root element.
+function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
+    const options: CompiledSorterOptions = {
+        relevantKeys: sorterOptions.relevantKeys ?? {},
+        nonSortKeys: compileSelectors(sorterOptions.nonSortKeys ?? []),
+        customSortElements: compileSelectors(sorterOptions.customSortElements ?? []),
+        keyOrderOverrides: sorterOptions.keyOrderOverrides ?? [],
+        sortLastKeys: compileSelectors(sorterOptions.sortLastKeys ?? []),
+        valuePriority: sorterOptions.valuePriority ?? {}
+    };
+    const path: NodePath = key === undefined ? [] : [key];
+
+    if (key !== undefined && findBestMatch(options.nonSortKeys, path) !== undefined) {
+        return object;
+    }
+    return sortNode(object, options, key, path);
 }
 
 

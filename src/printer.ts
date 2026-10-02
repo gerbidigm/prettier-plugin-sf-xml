@@ -1,18 +1,11 @@
 
 import * as xml2js from "xml2js";
 
-import type { Printer, SorterCustomKeys } from "./types";
+import type { Printer } from "./types";
 import { defaultCustomSortElements, defaultSelfClosingElements, sorterOptions, xmlBuilderOptions } from "./settings.js";
 import { sort } from "./sorter.js";
 import { restoreLeafComments } from "./commentPreservation.js";
-
-const buildCustomSortElements = (elements: string[]): SorterCustomKeys => {
-    const customSortElements: SorterCustomKeys = {};
-    elements.forEach((key, index) => {
-        customSortElements[key] = index + 1;
-    });
-    return customSortElements;
-};
+import { compileSelectors, findBestMatch } from "./selector.js";
 
 const getTab = function (tabWidth: number, useTabs: boolean): string {
     let tab = "";
@@ -98,13 +91,12 @@ const escapeTextQuotes = (xml: string): string =>
 // for Salesforce metadata, but some elements are known to be expected
 // self-closing for a given schema, so this collapses an empty-element pair to
 // `<tag/>` only for the elements the consumer has opted in via
-// `xmlSelfClosingElements` (either a bare tag name, `Root.tag` to scope it to
-// one root metadata type, or `Root.*` to match every tag under that root).
-const collapseSelfClosingTags = (xml: string, rootName: string, selfClosingElements: string[]): string => {
-    const included = new Set(selfClosingElements);
-    const isIncluded = (tagName: string): boolean =>
-        included.has(tagName) || included.has(`${rootName}.${tagName}`) || included.has(`${rootName}.*`);
-
+// `xmlSelfClosingElements` selectors (e.g. "/Layout//layoutColumns", or
+// "/Flow//*" to match every element under that root). Open tags are tracked
+// as a stack so each candidate is matched against its full path.
+const collapseSelfClosingTags = (xml: string, selfClosingElements: string[]): string => {
+    const selectors = compileSelectors(selfClosingElements, "root");
+    const openTags: string[] = [];
     const tokens = tokenizeXml(xml);
     let output = "";
     let i = 0;
@@ -128,11 +120,14 @@ const collapseSelfClosingTags = (xml: string, rootName: string, selfClosingEleme
             const closingTag = `</${tagName}>`;
             const next = tokens[i + 1];
 
-            if (isIncluded(tagName) && next?.type === "tag" && next.text === closingTag) {
+            if (next?.type === "tag" && next.text === closingTag && findBestMatch(selectors, [...openTags, tagName]) !== undefined) {
                 output += tagText.slice(0, -1) + "/>";
                 i += 2;
                 continue;
             }
+            openTags.push(tagName);
+        } else if (isClosingTag) {
+            openTags.pop();
         }
 
         output += tagText;
@@ -148,13 +143,12 @@ const printer: Printer = {
         const builder = new xml2js.Builder(xmlBuilderOptions);
         const runtimeSorterOptions = {
             ...sorterOptions,
-            customSortElements: buildCustomSortElements(opts.xmlCustomSortElements ?? defaultCustomSortElements)
+            customSortElements: opts.xmlCustomSortElements ?? defaultCustomSortElements
         };
         const sortedJsonObj = sort(path.getValue().parsedXML, runtimeSorterOptions, undefined);
         let sortedXML = builder.buildObject(sortedJsonObj);
 
-        const rootName = Object.keys(sortedJsonObj)[0] ?? "";
-        sortedXML = collapseSelfClosingTags(sortedXML, rootName, opts.xmlSelfClosingElements ?? defaultSelfClosingElements);
+        sortedXML = collapseSelfClosingTags(sortedXML, opts.xmlSelfClosingElements ?? defaultSelfClosingElements);
 
         // add new line at the end of the file if not exist
         if (!sortedXML.endsWith("\n")) {

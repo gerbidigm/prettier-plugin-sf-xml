@@ -116,15 +116,13 @@ export type SorterRelevantKeys = {
     [key: string]: any;
 };
 
-export type SorterCustomKeys = {
-    [key: string]: any
-};
-
 
 export type SorterOptions = {
     relevantKeys?: SorterRelevantKeys;
+    // nonSortKeys, customSortElements (in priority order), and sortLastKeys
+    // are selectors — see selector.ts.
     nonSortKeys?: string[];
-    customSortElements?: SorterCustomKeys;
+    customSortElements?: string[];
     keyOrderOverrides?: [string, string][];
     sortLastKeys?: string[];
     valuePriority?: { [containerKey: string]: string[] };

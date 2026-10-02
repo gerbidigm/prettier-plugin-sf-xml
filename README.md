@@ -9,6 +9,7 @@ This plugin uses a modified version of the [swagup-com/sf-xml-formatter](https:/
 - **Salesforce-aware sorting** — sibling elements sort to match how Salesforce's own Metadata API serializes retrieved files (alphabetical by default, with pinned identifier fields and metadata-type-specific exceptions such as Flow canvas elements and Report groupings) instead of plain alphabetical order.
 - **Comment preservation** — XML comments, including ones that are an element's entire content (e.g. translation-file placeholders like `<label><!-- Some Label --></label>`), survive formatting instead of being dropped.
 - **Configurable self-closing elements** — opt specific elements into `<tag/>` instead of the default `<tag></tag>` for empty elements, globally or scoped to a root metadata type.
+- **XPath-style selectors** — options target elements with familiar [selectors](#selectors) such as `/Layout//layoutColumns`.
 - **Standard Prettier indentation** — honors the standard `tabWidth` and `useTabs` options.
 
 ## Getting started
@@ -33,11 +34,30 @@ The `prettier` executable is now installed and ready for use:
 ./node_modules/.bin/prettier --write '**/*.xml'
 ```
 
+## Selectors
+
+Options that target specific elements take XPath-style selectors. A selector is matched against an element's path from the root, the same way XSLT match patterns work:
+
+| Meaning | Selector |
+| --- | --- |
+| `layoutColumns` anywhere under the `Layout` root | `/Layout//layoutColumns` |
+| Every element under the `Flow` root | `/Flow//*` |
+| `description` directly under `actionCalls` | `actionCalls/description` |
+| `tabs` directly under the `CustomApplication` root | `/CustomApplication/tabs` |
+| The root element's `xmlns` attribute | `/*/@xmlns` |
+| `fullName` anywhere | `fullName` |
+
+Only `/` (direct child), `//` (any depth), element names, `*` (any element), and a final `@name` attribute step are supported. Conditions in brackets (`[...]`) and functions are not. When several selectors in one option match the same element, the most specific one wins (more steps, then anchored with a leading `/`, then fewer wildcards); ties go to the one listed first.
+
+Salesforce names root elements in PascalCase (`CustomObject`, `Flow`) and everything beneath them in camelCase, so a leading `/RootType` reliably scopes a selector to one metadata type. The plugin prints a warning if it finds a PascalCase element below the root, since none of its rules expect one there.
+
+Earlier versions scoped entries with a dot (`Layout.layoutColumns`, `actionCalls.description`, `$.xmlns`). Those still work and are translated to the equivalent selector, with a one-time deprecation warning per entry.
+
 ## Options
 
 ### `xmlCustomSortElements`
 
-Element names that are pinned ahead of their alphabetically-sorted siblings, in priority order. Entries are either a bare element name (pinned wherever it appears) or `Container.element` to scope the pin to elements nested directly under a specific container key, since the same field name can need different treatment depending on what it's nested under.
+Selectors for elements that are pinned ahead of their alphabetically-sorted siblings, in priority order. A bare element name pins it wherever it appears; `container/element` scopes the pin to elements directly under that container, since the same field name can need different treatment depending on what it's nested under.
 
 Defaults to pinning `fullName`/`locationX`/`locationY` generally, plus Flow-specific container scoping: canvas elements (`actionCalls`, `assignments`, `decisions`, `dynamicChoiceSets`, `recordLookups`, `screens`, `variables`) pin `description`, `name`, `label`, `locationX`, `locationY` (whichever are present, in that order) ahead of their other fields, while nested structures (`rules`, `fields`) pin only `name`. This matches how Salesforce's own Flow Builder serializes those elements; sibling elements of the same type (e.g. multiple `screens`) also sort by their `name` as a result.
 
@@ -53,15 +73,15 @@ Salesforce's own canonical (retrieved) metadata XML only ever pins the identifie
 
 Empty elements render as `<tag></tag>` by default. Some Salesforce metadata schemas are known to expect specific elements to be self-closing, so this option lists elements that should instead render as `<tag/>`.
 
-Entries are either a bare element name (applies under any root metadata type), `Root.element` to scope it to one root type, or `Root.*` to self-close every empty element under that root type:
+Entries are selectors: a bare element name applies under any root metadata type, `/Root//element` scopes it to one root type, and `/Root//*` self-closes every empty element under that root type:
 
 ```json
 {
-  "xmlSelfClosingElements": ["Layout.layoutColumns"]
+  "xmlSelfClosingElements": ["/Layout//layoutColumns"]
 }
 ```
 
-Defaults to `["Layout.layoutColumns", "Flow.*", "CustomMetadata.*", "Dashboard.*", "QuickAction.*"]`.
+Defaults to `["/Layout//layoutColumns", "/Flow//*", "/CustomMetadata//*", "/Dashboard//*", "/QuickAction//*"]`.
 
 ## Development
 

@@ -26,17 +26,17 @@ test("bare name opts an element into self-closing under any root", async () => {
     expect(out).toContain("<otherThing></otherThing>");
 });
 
-test("Root.tag opts an element into self-closing only under that root", async () => {
-    const out = await format({ xmlSelfClosingElements: ["Layout.layoutColumns"] });
+test("/Root//tag opts an element into self-closing only under that root", async () => {
+    const out = await format({ xmlSelfClosingElements: ["/Layout//layoutColumns"] });
     expect(out).toContain("<layoutColumns/>");
     expect(out).toContain("<otherThing></otherThing>");
 
-    const outOtherRoot = await format({ xmlSelfClosingElements: ["OtherRoot.layoutColumns"] });
+    const outOtherRoot = await format({ xmlSelfClosingElements: ["/OtherRoot//layoutColumns"] });
     expect(outOtherRoot).toContain("<layoutColumns></layoutColumns>");
 });
 
-test("Root.* self-closes every empty element under that root, by default for Flow", async () => {
-    const out = await format({ xmlSelfClosingElements: ["Layout.*"] });
+test("/Root//* self-closes every empty element under that root, by default for Flow", async () => {
+    const out = await format({ xmlSelfClosingElements: ["/Layout//*"] });
     expect(out).toContain("<layoutColumns/>");
     expect(out).toContain("<otherThing/>");
 
@@ -75,4 +75,48 @@ test("CustomMetadata and Dashboard self-close every empty element by default, li
     ].join("\n");
     const dashboardOut = await prettier.format(dashboardXml, { parser: "sf-xml-parse", plugins: [plugin as any as string] });
     expect(dashboardOut).toContain("<runningUser/>");
+});
+
+test("selectors match an element's full path, not just its name", async () => {
+    const nestedXml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<Layout xmlns="http://soap.sforce.com/2006/04/metadata">',
+        '    <layoutSections>',
+        '        <layoutColumns></layoutColumns>',
+        '    </layoutSections>',
+        '    <layoutColumns></layoutColumns>',
+        '</Layout>',
+        ''
+    ].join("\n");
+    const out = await prettier.format(nestedXml, {
+        parser: "sf-xml-parse",
+        plugins: [plugin as any as string],
+        xmlSelfClosingElements: ["layoutSections/layoutColumns"]
+    } as any);
+    expect(out).toContain("    <layoutColumns/>\n  </layoutSections>");
+    expect(out).toContain("  <layoutColumns></layoutColumns>\n</Layout>");
+});
+
+test("legacy Root.tag entries still work, with a deprecation warning", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const out = await format({ xmlSelfClosingElements: ["Layout.otherThing"] });
+    expect(out).toContain("<otherThing/>");
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"/Layout//otherThing"'));
+    warn.mockRestore();
+});
+
+test("warns about PascalCase elements below the root", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const pascalXml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<Layout xmlns="http://soap.sforce.com/2006/04/metadata">',
+        '    <layoutSections><Nested>x</Nested></layoutSections>',
+        '    <layoutSections><Nested>y</Nested></layoutSections>',
+        '</Layout>',
+        ''
+    ].join("\n");
+    await prettier.format(pascalXml, { parser: "sf-xml-parse", plugins: [plugin as any as string], filepath: "Foo.layout-meta.xml" });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("Foo.layout-meta.xml: unexpected PascalCase element at /Layout/layoutSections/Nested"));
+    warn.mockRestore();
 });

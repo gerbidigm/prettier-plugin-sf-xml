@@ -25,7 +25,7 @@ const plugin: Plugin = {
             type: 'string',
             array: true,
             default: [{ value: defaultCustomSortElements }],
-            description: 'Element names that are pinned ahead of their alphabetically-sorted siblings, in priority order. Set to just the identifier element (e.g. ["fullName"]) to match Salesforce\'s own canonical retrieve ordering exactly.'
+            description: 'XPath-style selectors for elements pinned ahead of their alphabetically-sorted siblings, in priority order (e.g. "fullName", "actionCalls/description"). Set to just the identifier element (e.g. ["fullName"]) to match Salesforce\'s own canonical retrieve ordering exactly.'
         },
         xmlSelfClosingElements: {
             since: '0.4.0',
@@ -33,7 +33,7 @@ const plugin: Plugin = {
             type: 'string',
             array: true,
             default: [{ value: defaultSelfClosingElements }],
-            description: 'Empty elements that should render self-closing ("<tag/>") instead of the default "<tag></tag>". Entries are either a bare element name (applies under any root metadata type) or "Root.element" to scope it to one root type, e.g. "Layout.layoutColumns".'
+            description: 'XPath-style selectors for empty elements that should render self-closing ("<tag/>") instead of the default "<tag></tag>", e.g. "layoutColumns" (anywhere), "/Layout//layoutColumns" (under the Layout root), or "/Flow//*" (every element under the Flow root).'
         }
     }
 }
