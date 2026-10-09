@@ -36,6 +36,20 @@ const flowNameLabelFieldOrder = ["name", "label"];
 // pinned, with a root attribute selector ("/*/@xmlns").
 const xmlAttributeOrder = ["xmlns", "xmlns:xsi", "xmlns:xsd"];
 
+// CustomObject searchLayouts lists whose order Salesforce preserves on
+// deploy/retrieve and displays as column or button order.
+const searchLayoutOrderedLists = [
+    "customTabListAdditionalFields",
+    "listViewButtons",
+    "lookupDialogsAdditionalFields",
+    "lookupFilterFields",
+    "lookupPhoneDialogsAdditionalFields",
+    "massQuickActions",
+    "searchFilterFields",
+    "searchResultsAdditionalFields",
+    "searchResultsCustomButtons"
+];
+
 export const sorterOptions: SorterOptions = {
     relevantKeys: {
         ...Object.fromEntries(flowCanvasElements.map((element) => [element, ["name"]])),
@@ -94,6 +108,36 @@ export const sorterOptions: SorterOptions = {
         "sections",
         "/StandardValueSet",
         "valueSetDefinition"
+    ],
+    // Selectors for repeated elements whose sequence is meaningful to
+    // Salesforce, so they keep their original order while each element's
+    // own children still sort normally. Only entries whose order is
+    // documented (or verified by a deploy/retrieve round trip) belong here:
+    // - searchLayouts lists: Salesforce round-trips their order and uses it
+    //   as the default tab, search-result, and lookup columns and button
+    //   order. excludedStandardButtons is a set, so it still sorts.
+    // - CompactLayout fields: "Their order represents the prioritization
+    //   given to them" (Metadata API CompactLayout).
+    // - FieldSet displayedFields: "The order in which a field is listed
+    //   determines the order of appearance on the page" (FieldSet).
+    // - ListView filters: booleanFilter numbers refer to filter line items
+    //   by position, e.g. "(1 AND 2) OR 3" (ListView).
+    // - Flow decision rules: "evaluated in the order that they're listed",
+    //   and rule conditions are numbered by position in conditionLogic
+    //   (FlowRule).
+    // - Flow choiceReferences: "choice options appear in the order specified
+    //   in this array" (FlowScreenField).
+    preserveOrderKeys: [
+        ...searchLayoutOrderedLists.map((list) => `/CustomObject/searchLayouts/${list}`),
+        "/CompactLayout/fields",
+        "/CustomObject/compactLayouts/fields",
+        "/FieldSet/displayedFields",
+        "/CustomObject/fieldSets/displayedFields",
+        "/ListView/filters",
+        "/CustomObject/listViews/filters",
+        "/Flow/decisions/rules",
+        "/Flow//rules/conditions",
+        "/Flow//choiceReferences"
     ],
     // Alphabetical order gets these pairs wrong: Salesforce requires the
     // first element of each pair before the second regardless of spelling.

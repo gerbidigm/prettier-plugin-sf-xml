@@ -94,6 +94,7 @@ function isSelectable(key: string | undefined): boolean {
 type CompiledSorterOptions = {
     relevantKeys: SorterRelevantKeys;
     nonSortKeys: Selector[];
+    preserveOrderKeys: Selector[];
     customSortElements: Selector[];
     keyOrderOverrides: [string, string][];
     sortLastKeys: Selector[];
@@ -129,8 +130,17 @@ function sortNode(object: any, options: CompiledSorterOptions, key: string | und
         case Type.BASIC:
             return object;
 
-        case Type.ARRAY:
-            return object.map((item) => sortNode(item, options, key, path)).sort((a, b) => mySortFunction(a, b, key!, relevantKeys, valuePriority));
+        case Type.ARRAY: {
+            const items = object.map((item) => sortNode(item, options, key, path));
+            // A preserve-order key's repeated elements keep their original
+            // sequence (e.g. searchLayouts columns), but each element's own
+            // children are still sorted — unlike nonSortKeys, which freezes
+            // the whole subtree.
+            if (isSelectable(key) && findBestMatch(options.preserveOrderKeys, path) !== undefined) {
+                return items;
+            }
+            return items.sort((a, b) => mySortFunction(a, b, key!, relevantKeys, valuePriority));
+        }
 
         case Type.OBJECT: {
             const newObject: Record<string, any> = {};
@@ -212,6 +222,7 @@ function sort(object: any, sorterOptions: SorterOptions, key?: string): any {
     const options: CompiledSorterOptions = {
         relevantKeys: sorterOptions.relevantKeys ?? {},
         nonSortKeys: compileSelectors(sorterOptions.nonSortKeys ?? []),
+        preserveOrderKeys: compileSelectors(sorterOptions.preserveOrderKeys ?? []),
         customSortElements: compileSelectors(sorterOptions.customSortElements ?? []),
         keyOrderOverrides: sorterOptions.keyOrderOverrides ?? [],
         sortLastKeys: compileSelectors(sorterOptions.sortLastKeys ?? []),

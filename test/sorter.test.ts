@@ -76,6 +76,30 @@ test("default settings preserve CustomApplication tab order", () => {
     expect(result.CustomApplication.tabs).toEqual(["standard-home", "Zulu__c", "Alpha__c"]);
 });
 
+test("preserveOrderKeys keep repeated elements in order but still sort each element's children", () => {
+    const options: SorterOptions = {
+        preserveOrderKeys: ["/ListView/filters"]
+    };
+    const input = {
+        ListView: {
+            filters: [
+                { value: ["1"], field: ["Zulu__c"] },
+                { value: ["2"], field: ["Alpha__c"] }
+            ],
+            other: [
+                { value: ["1"], field: ["Zulu__c"] },
+                { value: ["2"], field: ["Alpha__c"] }
+            ]
+        }
+    };
+
+    const result = sort(input, options);
+
+    expect(result.ListView.filters.map((item: any) => item.field[0])).toEqual(["Zulu__c", "Alpha__c"]);
+    expect(Object.keys(result.ListView.filters[0])).toEqual(["field", "value"]);
+    expect(result.ListView.other.map((item: any) => item.field[0])).toEqual(["Alpha__c", "Zulu__c"]);
+});
+
 test("container-scoped customSortElements beat bare ones and only apply under that container", () => {
     const options: SorterOptions = {
         customSortElements: ["fullName", "actionCalls/label", "actionCalls/name"]

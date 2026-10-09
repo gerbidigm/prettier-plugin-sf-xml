@@ -119,9 +119,10 @@ export type SorterRelevantKeys = {
 
 export type SorterOptions = {
     relevantKeys?: SorterRelevantKeys;
-    // nonSortKeys, customSortElements (in priority order), and sortLastKeys
-    // are selectors — see selector.ts.
+    // nonSortKeys, preserveOrderKeys, customSortElements (in priority
+    // order), and sortLastKeys are selectors — see selector.ts.
     nonSortKeys?: string[];
+    preserveOrderKeys?: string[];
     customSortElements?: string[];
     keyOrderOverrides?: [string, string][];
     sortLastKeys?: string[];

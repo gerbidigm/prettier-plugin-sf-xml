@@ -102,8 +102,17 @@ function sortNode(object, options, key, path) {
     switch (getType(object)) {
         case Type.BASIC:
             return object;
-        case Type.ARRAY:
-            return object.map((item) => sortNode(item, options, key, path)).sort((a, b) => mySortFunction(a, b, key, relevantKeys, valuePriority));
+        case Type.ARRAY: {
+            const items = object.map((item) => sortNode(item, options, key, path));
+            // A preserve-order key's repeated elements keep their original
+            // sequence (e.g. searchLayouts columns), but each element's own
+            // children are still sorted — unlike nonSortKeys, which freezes
+            // the whole subtree.
+            if (isSelectable(key) && (0, selector_js_1.findBestMatch)(options.preserveOrderKeys, path) !== undefined) {
+                return items;
+            }
+            return items.sort((a, b) => mySortFunction(a, b, key, relevantKeys, valuePriority));
+        }
         case Type.OBJECT: {
             const newObject = {};
             const paths = new Map();
@@ -172,14 +181,15 @@ function sortNode(object, options, key, path) {
 // omit it when sorting a whole document, whose single top-level key is the
 // root element.
 function sort(object, sorterOptions, key) {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e, _f, _g;
     const options = {
         relevantKeys: (_a = sorterOptions.relevantKeys) !== null && _a !== void 0 ? _a : {},
         nonSortKeys: (0, selector_js_1.compileSelectors)((_b = sorterOptions.nonSortKeys) !== null && _b !== void 0 ? _b : []),
-        customSortElements: (0, selector_js_1.compileSelectors)((_c = sorterOptions.customSortElements) !== null && _c !== void 0 ? _c : []),
-        keyOrderOverrides: (_d = sorterOptions.keyOrderOverrides) !== null && _d !== void 0 ? _d : [],
-        sortLastKeys: (0, selector_js_1.compileSelectors)((_e = sorterOptions.sortLastKeys) !== null && _e !== void 0 ? _e : []),
-        valuePriority: (_f = sorterOptions.valuePriority) !== null && _f !== void 0 ? _f : {}
+        preserveOrderKeys: (0, selector_js_1.compileSelectors)((_c = sorterOptions.preserveOrderKeys) !== null && _c !== void 0 ? _c : []),
+        customSortElements: (0, selector_js_1.compileSelectors)((_d = sorterOptions.customSortElements) !== null && _d !== void 0 ? _d : []),
+        keyOrderOverrides: (_e = sorterOptions.keyOrderOverrides) !== null && _e !== void 0 ? _e : [],
+        sortLastKeys: (0, selector_js_1.compileSelectors)((_f = sorterOptions.sortLastKeys) !== null && _f !== void 0 ? _f : []),
+        valuePriority: (_g = sorterOptions.valuePriority) !== null && _g !== void 0 ? _g : {}
     };
     const path = key === undefined ? [] : [key];
     if (key !== undefined && (0, selector_js_1.findBestMatch)(options.nonSortKeys, path) !== undefined) {

@@ -7,6 +7,7 @@ This plugin uses a modified version of the [swagup-com/sf-xml-formatter](https:/
 ## Features
 
 - **Salesforce-aware sorting** — sibling elements sort to match how Salesforce's own Metadata API serializes retrieved files (alphabetical by default, with pinned identifier fields and metadata-type-specific exceptions such as Flow canvas elements and Report groupings) instead of plain alphabetical order.
+- **Order-significant lists stay put** — repeated elements whose sequence Salesforce uses keep their source order, while each entry's own children still sort: CustomObject `searchLayouts` column and button lists, CompactLayout `fields`, FieldSet `displayedFields`, ListView `filters` (numbered by `booleanFilter`), Flow decision `rules` and their `conditions`, and Flow `choiceReferences`. (CustomApplication `tabs`, list view and report `columns`, and whole `Layout`/`FlexiPage` files were already left in source order.)
 - **Comment preservation** — XML comments, including ones that are an element's entire content (e.g. translation-file placeholders like `<label><!-- Some Label --></label>`), survive formatting instead of being dropped.
 - **Configurable self-closing elements** — opt specific elements into `<tag/>` instead of the default `<tag></tag>` for empty elements, globally or scoped to a root metadata type.
 - **XPath-style selectors** — options target elements with familiar [selectors](#selectors) such as `/Layout//layoutColumns`.

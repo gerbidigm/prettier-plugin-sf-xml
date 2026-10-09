@@ -4,6 +4,7 @@
 
 - `xmlCustomSortElements` and `xmlSelfClosingElements` take XPath-style selectors (`/Layout//layoutColumns`, `actionCalls/description`, `/*/@xmlns`), matched against each element's full path. The earlier dot syntax (`Layout.layoutColumns`, `actionCalls.description`, `$.xmlns`) still works with a deprecation warning
 - Preserve `CustomApplication` tab order (`/CustomApplication/tabs`), which is the app's navigation order
+- Preserve the order of repeated elements whose sequence Salesforce uses, while still sorting each entry's children: CustomObject `searchLayouts` lists (`customTabListAdditionalFields`, `searchResultsAdditionalFields`, `lookupDialogsAdditionalFields`, `lookupPhoneDialogsAdditionalFields`, `lookupFilterFields`, `searchFilterFields`, `listViewButtons`, `searchResultsCustomButtons`, `massQuickActions`), CompactLayout `fields`, FieldSet `displayedFields`, ListView `filters`, Flow decision `rules` and rule `conditions`, and Flow `choiceReferences`. Previously these sorted alphabetically, which reordered columns and buttons and could change which filter a `booleanFilter`/`conditionLogic` number referred to
 - Warn when a PascalCase element appears below the root element, since Salesforce metadata only uses PascalCase for root elements
 
 - Fix: preserve comments that are an element's entire content (e.g. Salesforce translation-file placeholders like `<label><!-- Some Label --></label>`), which xml2js was silently dropping
