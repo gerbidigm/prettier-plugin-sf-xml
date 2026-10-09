@@ -111,8 +111,11 @@ export const sorterOptions: SorterOptions = {
     ],
     // Selectors for repeated elements whose sequence is meaningful to
     // Salesforce, so they keep their original order while each element's
-    // own children still sort normally. Only entries whose order is
-    // documented (or verified by a deploy/retrieve round trip) belong here:
+    // own children still sort normally. Entries belong here when their order
+    // is documented, verified by a deploy/retrieve round trip, or referenced
+    // by position from filter logic. Where the Metadata API guide is silent
+    // about order, keeping source order is still the safe choice, since it's
+    // the order Salesforce itself returns on retrieve.
     // - searchLayouts lists: Salesforce round-trips their order and uses it
     //   as the default tab, search-result, and lookup columns and button
     //   order. excludedStandardButtons is a set, so it still sorts.
@@ -122,11 +125,28 @@ export const sorterOptions: SorterOptions = {
     //   determines the order of appearance on the page" (FieldSet).
     // - ListView filters: booleanFilter numbers refer to filter line items
     //   by position, e.g. "(1 AND 2) OR 3" (ListView).
-    // - Flow decision rules: "evaluated in the order that they're listed",
-    //   and rule conditions are numbered by position in conditionLogic
+    // - Flow decision rules: "evaluated in the order that they're listed"
     //   (FlowRule).
     // - Flow choiceReferences: "choice options appear in the order specified
     //   in this array" (FlowScreenField).
+    // - Flow screen fields: a screen's fields are its components in display
+    //   order, and a field's nested fields are a section's (RegionContainer)
+    //   columns or a column's (Region) fields, also in display order
+    //   (FlowScreen, FlowScreenField; the guide doesn't state the order).
+    // - Flow filters and conditions: every Flow `filters` list
+    //   (FlowRecordFilter[] under recordLookups, recordUpdates,
+    //   recordDeletes, recordCreates, start, dynamicChoiceSets, waitEvents)
+    //   pairs with a filterLogic, and every `conditions` list (FlowCondition[]
+    //   under decision and screen rules, a screen field's visibilityRule,
+    //   start, waitEvents) with a conditionLogic, whose custom logic such as
+    //   "1 AND (2 OR 3)" numbers the entries by position.
+    // - booleanFilter criteria: Report filter criteriaItems, MatchingRule
+    //   matchingRuleItems, sharing criteria/guest rule criteriaItems, and
+    //   WorkflowRule criteriaItems, numbered by position in "(1 AND 2) OR 3"
+    //   style booleanFilter logic (Report, MatchingRule, SharingRules,
+    //   Workflow; the source-format decomposed roots are listed too).
+    // - Report groupingsAcross: a matrix report's across-grouping levels,
+    //   outermost first (groupingsDown is already a nonSortKey).
     preserveOrderKeys: [
         ...searchLayoutOrderedLists.map((list) => `/CustomObject/searchLayouts/${list}`),
         "/CompactLayout/fields",
@@ -136,8 +156,20 @@ export const sorterOptions: SorterOptions = {
         "/ListView/filters",
         "/CustomObject/listViews/filters",
         "/Flow/decisions/rules",
-        "/Flow//rules/conditions",
-        "/Flow//choiceReferences"
+        "/Flow//conditions",
+        "/Flow//choiceReferences",
+        "/Flow/screens//fields",
+        "/Flow//filters",
+        "/Report/filter/criteriaItems",
+        "/Report/groupingsAcross",
+        "/MatchingRules/matchingRules/matchingRuleItems",
+        "/MatchingRule/matchingRuleItems",
+        "/SharingRules/sharingCriteriaRules/criteriaItems",
+        "/SharingRules/sharingGuestRules/criteriaItems",
+        "/SharingCriteriaRule/criteriaItems",
+        "/SharingGuestRule/criteriaItems",
+        "/Workflow/rules/criteriaItems",
+        "/WorkflowRule/criteriaItems"
     ],
     // Alphabetical order gets these pairs wrong: Salesforce requires the
     // first element of each pair before the second regardless of spelling.
